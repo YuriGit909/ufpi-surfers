@@ -1,63 +1,35 @@
-// Bibliotecas utilizadas pelo OpenGL
-#ifdef __APPLE__
-    #define GL_SILENCE_DEPRECATION
-    #include <GLUT/glut.h>
-    #include <OpenGL/gl.h>
-    #include <OpenGL/glu.h>
-#else
-    #include <GL/glut.h>
-    #include <GL/gl.h>
-    #include <GL/glu.h>
-#endif
+#include <GL/glut.h>
+#include "game/game.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+/* 
+g++ src/main.cpp \
+src/game/game.cpp \
+src/ui/menu.cpp \
+src/ui/text.cpp \
+src/utils/draw.cpp \
+-o main \
+-lGL -lGLU -lglut 
+*/
+int main(int argc, char** argv) {
 
-#define ESC 27
+    glutInit(&argc, argv); // inicializa o GLUT
 
-void init();
-void display(void);
+    glutInitDisplayMode(
+        GLUT_DOUBLE |     // usa dois buffers para evitar tela piscando
+        GLUT_RGB |        // usa cores RGB
+        GLUT_DEPTH        // usa profundidade 3D
+    );
 
-int main(int argc, char **argv){
-    // Inicializa o GLUT e passa os argumentos do sistema
-    glutInit(&argc, argv);
+    glutInitWindowSize(800, 600);              // tamanho da janela
+    glutCreateWindow("Subway UFPI");          // título da janela
 
-    // Configura o modo de exibicao
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+    initGame();                               // configura OpenGL
 
-    // Configuracao da posicao e tamanho da janela
-    glutInitWindowPosition(100, 100);
-    glutInitWindowSize(800, 600);
+    glutDisplayFunc(display);                 // função que desenha
+    glutKeyboardFunc(keyboard);               // função do teclado
+    glutTimerFunc(16, update, 0);             // função de atualização
 
-    // Cria a janela
-    glutCreateWindow("UFPI Surfers");
+    glutMainLoop();                           // inicia o loop principal
 
-    init();
-
-    // Definicao das funcoes de callback
-    glutDisplayFunc(display);
-
-    // Loop infinito do GLUT
-    glutMainLoop();
-
-    return EXIT_SUCCESS;
-}
-
-void init(void){
-    glClearColor (1.0, 1.0, 1.0, 1.0); //Limpa a tela com a cor branca;
-    glEnable(GL_DEPTH_TEST); // Habilita o algoritmo Z-Buffer
-
-    // Iluminacao
-    // glEnable(GL_LIGHTING);
-    // glEnable(GL_LIGHT0);
-    // glEnable(GL_COLOR_MATERIAL);
-    // glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-}
-
-void display(void){
-    // Limpa o buffer de cores
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Troca os buffers para exibir o que foi desenhado
-    glutSwapBuffers();
+    return 0;
 }
