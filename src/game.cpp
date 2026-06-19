@@ -8,6 +8,10 @@
 
 using namespace std;
 
+bool sideHitWarning = false;
+int sideHitTimer = 0;
+const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
+
 struct Obstacle
 {
     float x;
@@ -62,6 +66,9 @@ void setupGameCamera()
 
 void initGame()
 {
+
+    sideHitWarning = false;
+    sideHitTimer = 0;
 
     obstacleCount = 5;
     nextObstacleIncrease = 5000;
@@ -128,7 +135,11 @@ void drawGame()
     drawTrack();
     drawObstacles();
     drawPlayer();
-
+     if (sideHitWarning && !gameOver)
+    {
+        glColor3f(1.0f, 0.8f, 0.0f);
+        drawText2D(360, 520, "CUIDADO! BATEU DE LADO");
+    }
     char scoreText[50];
     sprintf(scoreText, "PONTOS: %d", int(score));
 
@@ -194,10 +205,9 @@ void updateGame(int value)
     }
     if (score >= nextObstacleIncrease)
     {
-        obstacleCount *= 1.15;
+        obstacleCount *= 1.5;
         nextObstacleIncrease *= 2;
 
-        obstacles.clear();
 
         for (int i = 0; i < obstacleCount; i++)
         {
@@ -245,6 +255,19 @@ void updateGame(int value)
     }
 
     updatePlayer();
+    if (sideHitWarning)
+    {
+        sideHitTimer++;
+
+        if (sideHitTimer >= SIDE_HIT_LIMIT)
+        {
+            sideHitWarning = false;
+            sideHitTimer = 0;
+
+            // se tiver implementado cor no player
+            // setDamaged(false);
+        }
+    }
     checkCollision();
 
     glutPostRedisplay();
@@ -292,6 +315,32 @@ void drawText2D(float x, float y, const char *text)
     glEnable(GL_DEPTH_TEST);
 }
 
+bool canMoveToLane(float targetX)
+{
+    for (auto &obs : obstacles)
+    {
+        float distanceX = fabs(targetX - obs.x);
+        float distanceZ = fabs(2.0f - obs.z);
+
+        if (distanceX < 1.0f && distanceZ < 1.5f)
+        {
+            if (sideHitWarning)
+            {
+                gameOver = true;
+            }
+            else
+            {
+                sideHitWarning = true;
+                sideHitTimer = 0;
+            }
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void gameKeyboard(unsigned char key, int x, int y)
 {
 
@@ -307,10 +356,20 @@ void gameKeyboard(unsigned char key, int x, int y)
     }
 
     if (key == 'a' || key == 'A')
-        movePlayerLeft();
+    {
+        float targetX = getPlayerX() - 3.0f;
+
+        if (canMoveToLane(targetX))
+            movePlayerLeft();
+    }
 
     if (key == 'd' || key == 'D')
-        movePlayerRight();
+    {
+        float targetX = getPlayerX() + 3.0f;
+
+        if (canMoveToLane(targetX))
+            movePlayerRight();
+    }
 
     if (key == ' ')
         jump();
