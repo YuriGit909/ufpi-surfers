@@ -4,15 +4,23 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include "coin.h"
 #include "obstacle.h"
 #include "player.h"
 
 using namespace std;
 
+enum ObstacleType
+{
+    BUS,
+    SPEED_BUMP
+};
+
 struct Obstacle
 {
     float x;
     float z;
+    ObstacleType type;
 };
 
 vector<Obstacle> obstacles;
@@ -39,6 +47,22 @@ void createObstacle(float z)
 
     obs.z = z;
 
+    int type = rand() % 2;
+
+    if (type == 0)
+    {
+        obs.type = BUS;
+    }
+    else
+    {
+        obs.type = SPEED_BUMP;
+
+        // 40% de chance de ter arco de fichas em cima da lombada
+        if (rand() % 100 < 40)
+        {
+            spawnCoinArc(obs.x, obs.z);
+        }
+    }
     obstacles.push_back(obs);
 }
 
@@ -51,16 +75,30 @@ void initObstacles()
 
 void drawObstacles()
 {
-
-    glColor3f(1.0f, 0.0f, 0.0f);
-
     for (auto &obs : obstacles)
     {
-        glPushMatrix();
-        glTranslatef(obs.x, 0.75f, obs.z);
-        glScalef(1.2f, 1.5f, 1.2f);
-        glutSolidCube(1.0f);
-        glPopMatrix();
+        if (obs.type == BUS)
+        {
+            // Ônibus: vermelho, alto e comprido
+            glColor3f(1.0f, 0.0f, 0.0f);
+
+            glPushMatrix();
+            glTranslatef(obs.x, 1.0f, obs.z);
+            glScalef(1.5f, 2.0f, 4.0f);
+            glutSolidCube(1.0f);
+            glPopMatrix();
+        }
+        else if (obs.type == SPEED_BUMP)
+        {
+            // Lombada: laranja, baixa e larga
+            glColor3f(1.0f, 0.5f, 0.0f);
+
+            glPushMatrix();
+            glTranslatef(obs.x, 0.25f, obs.z);
+            glScalef(2.2f, 0.4f, 1.0f);
+            glutSolidCube(1.0f);
+            glPopMatrix();
+        }
     }
 }
 
@@ -105,6 +143,14 @@ void updateObstacles(float speed, float score)
                 obs.x = 3.0f;
 
             obs.z = -120.0f;
+
+            if (obs.type == SPEED_BUMP)
+            {
+                if (rand() % 100 < 40)
+                {
+                    spawnCoinArc(obs.x, obs.z);
+                }
+            }
         }
     }
 }
@@ -119,11 +165,26 @@ void checkCollision()
         float distanceX = fabs(playerX - obs.x);
         float distanceZ = fabs(2.0f - obs.z);
 
-        if (distanceX < 1.0f &&
-            distanceZ < 1.0f &&
-            playerY < 2.0f)
+        if (obs.type == BUS)
         {
-            gameOver = true;
+            if (distanceX < 1.0f &&
+                distanceZ < 2.0f &&
+                playerY < 2.0f)
+            {
+                gameOver = true;
+                return;
+            }
+        }
+
+        if (obs.type == SPEED_BUMP)
+        {
+            if (distanceX < 1.0f &&
+                distanceZ < 1.0f &&
+                playerY < 1.5f)
+            {
+                gameOver = true;
+                return;
+            }
         }
     }
 }
@@ -135,7 +196,9 @@ bool canMoveToLane(float targetX)
         float distanceX = fabs(targetX - obs.x);
         float distanceZ = fabs(2.0f - obs.z);
 
-        if (distanceX < 1.0f && distanceZ < 1.5f)
+        if (obs.type == BUS &&
+            distanceX < 1.0f &&
+            distanceZ < 1.5f)
         {
             if (sideHitWarning)
             {

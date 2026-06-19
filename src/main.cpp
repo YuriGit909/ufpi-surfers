@@ -3,6 +3,8 @@
 
 #include "menu.h"
 #include "game.h"
+#include <ctime>
+#include <cstdlib>
 
 enum Screen {
     MENU,
@@ -38,6 +40,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 int main(int argc, char** argv) {
+    srand(time(NULL));
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1000, 600);

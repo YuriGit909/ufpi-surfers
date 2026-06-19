@@ -12,6 +12,7 @@ struct Coin
 {
     float x;
     float z;
+    float y;
     bool active;
 };
 
@@ -38,7 +39,9 @@ void spawnCoinLine()
         Coin c;
 
         c.x = x;
+        c.y = 1.0f;
         c.z = -80.0f - i * 3.0f;
+
         c.active = true;
 
         coins.push_back(c);
@@ -106,7 +109,7 @@ void drawCoins()
             continue;
 
         glPushMatrix();
-            glTranslatef(c.x, 1.0f, c.z);
+            glTranslatef(c.x, c.y, c.z);
             glScalef(0.45f, 0.45f, 0.15f);
             glutSolidSphere(1.0f, 20, 20);
         glPopMatrix();
@@ -131,6 +134,31 @@ void checkCoinCollision()
             ruCoins++;
         }
     }
+}
+
+void spawnCoinArc(float x, float z)
+{
+    const int quantidade = 6;
+
+    for (int i = 0; i < quantidade; i++)
+    {
+        Coin c;
+
+        c.x = x;
+
+        float t = (float)i / (quantidade - 1); // 0 até 1
+
+        c.z = z - 4.0f + i * 1.6f;
+
+        // arco: começa baixo, sobe no meio, desce no fim
+        c.y = 1.2f + sin(t * 3.14159f) * 2.0f;
+
+        c.active = true;
+
+        coins.push_back(c);
+    }
+
+    coinLineActive = true;
 }
 
 int getRuCoins()
