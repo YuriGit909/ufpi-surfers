@@ -8,6 +8,29 @@
 
 using namespace std;
 
+enum PowerType
+{
+    DOUBLE_POINTS,
+    SPEED_BOOST,
+    INVINCIBILITY
+};
+
+struct PowerUp
+{
+    float x;
+    float z;
+    bool active;
+    int respawnTimer;
+    PowerType type;
+};
+
+vector<PowerUp> powerUps;
+
+bool doublePointsActive = false;
+int doublePointsTimer = 0;
+
+const int DOUBLE_POINTS_DURATION = 600; // 10 segundos
+
 bool sideHitWarning = false;
 int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
@@ -35,6 +58,8 @@ float trackOffset = 0.0f;
 
 float baseSpeed = 0.25f;
 float speed = baseSpeed;
+
+void checkPowerUps();
 
 void drawCube(float x, float y, float z, float sx, float sy, float sz)
 {
@@ -67,6 +92,21 @@ void setupGameCamera()
 void initGame()
 {
 
+    powerUps.clear();
+
+    PowerUp manga;
+
+    manga.x = 0.0f;
+    manga.z = -100.0f;
+    manga.active = true;
+    manga.type = DOUBLE_POINTS;
+    manga.respawnTimer = 0;
+
+    powerUps.push_back(manga);
+
+    doublePointsActive = false;
+    doublePointsTimer = 0;
+
     sideHitWarning = false;
     sideHitTimer = 0;
 
@@ -86,6 +126,32 @@ void initGame()
     trackOffset = 0.0f;
 
     obstacles.clear();
+}
+
+void drawPowerUps()
+{
+    for (auto &p : powerUps)
+    {
+        if (!p.active)
+            continue;
+
+        switch (p.type)
+        {
+        case DOUBLE_POINTS:
+
+            glColor3f(1.0f, 0.8f, 0.0f);
+
+            glPushMatrix();
+            glTranslatef(p.x, 0.5f, p.z);
+            glutSolidSphere(0.5f, 20, 20);
+            glPopMatrix();
+
+            break;
+
+        default:
+            break;
+        }
+    }
 }
 
 void drawTrack()
@@ -134,8 +200,16 @@ void drawGame()
 
     drawTrack();
     drawObstacles();
+    drawPowerUps();
     drawPlayer();
-     if (sideHitWarning && !gameOver)
+
+    if (doublePointsActive)
+    {
+        glColor3f(1.0f, 0.8f, 0.0f);
+        drawText2D(40, 520, "MANGA ATIVA - PONTOS x2");
+    }
+
+    if (sideHitWarning && !gameOver)
     {
         glColor3f(1.0f, 0.8f, 0.0f);
         drawText2D(360, 520, "CUIDADO! BATEU DE LADO");
@@ -157,6 +231,46 @@ void drawGame()
 
 void updateGame(int value)
 {
+
+    for (auto &p : powerUps)
+{
+    if (!p.active)
+    {
+        p.respawnTimer--;
+
+        if (p.respawnTimer <= 0)
+        {
+            int lane = rand() % 3;
+
+            if (lane == 0) p.x = -3.0f;
+            if (lane == 1) p.x = 0.0f;
+            if (lane == 2) p.x = 3.0f;
+
+            p.z = -250.0f;
+            p.active = true;
+        }
+
+        continue;
+    }
+
+    p.z += speed;
+
+    if (p.z > 5.0f)
+    {
+        p.active = false;
+        p.respawnTimer = 1200;
+    }
+}
+
+    if (doublePointsActive)
+    {
+        doublePointsTimer--;
+
+        if (doublePointsTimer <= 0)
+        {
+            doublePointsActive = false;
+        }
+    }
 
     if (score >= limiar)
     {
@@ -181,7 +295,10 @@ void updateGame(int value)
 
     frameCounter++;
 
-    score += pointMultiplier;
+    if (doublePointsActive)
+        score += pointMultiplier * 2;
+    else
+        score += pointMultiplier;
 
     if (obstacles.empty() && score >= 30)
     {
@@ -207,7 +324,6 @@ void updateGame(int value)
     {
         obstacleCount *= 1.5;
         nextObstacleIncrease *= 2;
-
 
         for (int i = 0; i < obstacleCount; i++)
         {
@@ -269,9 +385,44 @@ void updateGame(int value)
         }
     }
     checkCollision();
-
+    checkPowerUps();
     glutPostRedisplay();
     glutTimerFunc(16, updateGame, 0);
+}
+
+void checkPowerUps()
+{
+    float playerX = getPlayerX();
+
+    for (auto &p : powerUps)
+    {
+        if (!p.active)
+            continue;
+
+        float distanceX = fabs(playerX - p.x);
+        float distanceZ = fabs(2.0f - p.z);
+
+        if (distanceX < 1.0f && distanceZ < 1.0f)
+        {
+            p.active = false;
+            p.respawnTimer = 600;
+
+            switch (p.type)
+            {
+            case DOUBLE_POINTS:
+
+                doublePointsActive = true;
+                doublePointsTimer = DOUBLE_POINTS_DURATION;
+
+                printf("Manga coletada! Pontos x2\n");
+
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
 }
 
 void checkCollision()
