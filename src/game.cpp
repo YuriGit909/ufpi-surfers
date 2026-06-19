@@ -4,45 +4,18 @@
 #include <vector>
 #include "game.h"
 #include "player.h"
+#include "powerup.h"
+#include "ui.h"
+#include "coin.h"
+#include "obstacle.h"
 #include <cstdio>
 
 using namespace std;
-
-enum PowerType
-{
-    DOUBLE_POINTS,
-    SPEED_BOOST,
-    INVINCIBILITY
-};
-
-struct PowerUp
-{
-    float x;
-    float z;
-    bool active;
-    int respawnTimer;
-    PowerType type;
-};
-
-vector<PowerUp> powerUps;
-
-bool doublePointsActive = false;
-int doublePointsTimer = 0;
-
-const int DOUBLE_POINTS_DURATION = 600; // 10 segundos
 
 bool sideHitWarning = false;
 int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 
-struct Obstacle
-{
-    float x;
-    float z;
-};
-
-int obstacleCount = 5;
-int nextObstacleIncrease = 5000;
 
 float score = 0;
 float pointMultiplier = 0.25;
@@ -50,7 +23,6 @@ float pointMultiplier = 0.25;
 int frameCounter = 0;
 int limiar = 500;
 
-vector<Obstacle> obstacles;
 
 bool gameOver = false;
 
@@ -92,26 +64,9 @@ void setupGameCamera()
 void initGame()
 {
 
-    powerUps.clear();
-
-    PowerUp manga;
-
-    manga.x = 0.0f;
-    manga.z = -100.0f;
-    manga.active = true;
-    manga.type = DOUBLE_POINTS;
-    manga.respawnTimer = 0;
-
-    powerUps.push_back(manga);
-
-    doublePointsActive = false;
-    doublePointsTimer = 0;
-
+    
     sideHitWarning = false;
     sideHitTimer = 0;
-
-    obstacleCount = 5;
-    nextObstacleIncrease = 5000;
 
     speed = baseSpeed;
     pointMultiplier = 0.25;
@@ -125,33 +80,9 @@ void initGame()
 
     trackOffset = 0.0f;
 
-    obstacles.clear();
-}
-
-void drawPowerUps()
-{
-    for (auto &p : powerUps)
-    {
-        if (!p.active)
-            continue;
-
-        switch (p.type)
-        {
-        case DOUBLE_POINTS:
-
-            glColor3f(1.0f, 0.8f, 0.0f);
-
-            glPushMatrix();
-            glTranslatef(p.x, 0.5f, p.z);
-            glutSolidSphere(0.5f, 20, 20);
-            glPopMatrix();
-
-            break;
-
-        default:
-            break;
-        }
-    }
+    initObstacles();
+    initPowerUps();
+    initCoins();
 }
 
 void drawTrack()
@@ -176,23 +107,6 @@ void drawTrack()
     }
 }
 
-void drawObstacles()
-{
-
-    glColor3f(1.0f, 0.0f, 0.0f);
-
-    for (auto &obs : obstacles)
-    {
-
-        drawCube(
-            obs.x,
-            0.75f,
-            obs.z,
-            1.2f,
-            1.5f,
-            1.2f);
-    }
-}
 
 void drawGame()
 {
@@ -201,9 +115,10 @@ void drawGame()
     drawTrack();
     drawObstacles();
     drawPowerUps();
+    drawCoins();
     drawPlayer();
 
-    if (doublePointsActive)
+    if (isDoublePointsActive())
     {
         glColor3f(1.0f, 0.8f, 0.0f);
         drawText2D(40, 520, "MANGA ATIVA - PONTOS x2");
@@ -217,6 +132,11 @@ void drawGame()
     char scoreText[50];
     sprintf(scoreText, "PONTOS: %d", int(score));
 
+    char coinText[50];
+    sprintf(coinText, "FICHAS RU: %d", getRuCoins());
+
+    glColor3f(1.0f, 0.9f, 0.0f);
+    drawText2D(40, 490, coinText);
     glColor3f(1.0f, 1.0f, 1.0f);
     drawText2D(40, 550, scoreText);
     if (gameOver)
@@ -232,45 +152,9 @@ void drawGame()
 void updateGame(int value)
 {
 
-    for (auto &p : powerUps)
-{
-    if (!p.active)
-    {
-        p.respawnTimer--;
-
-        if (p.respawnTimer <= 0)
-        {
-            int lane = rand() % 3;
-
-            if (lane == 0) p.x = -3.0f;
-            if (lane == 1) p.x = 0.0f;
-            if (lane == 2) p.x = 3.0f;
-
-            p.z = -250.0f;
-            p.active = true;
-        }
-
-        continue;
-    }
-
-    p.z += speed;
-
-    if (p.z > 5.0f)
-    {
-        p.active = false;
-        p.respawnTimer = 1200;
-    }
-}
-
-    if (doublePointsActive)
-    {
-        doublePointsTimer--;
-
-        if (doublePointsTimer <= 0)
-        {
-            doublePointsActive = false;
-        }
-    }
+    updateCoins(speed, score);
+    checkCoinCollision();
+    updatePowerUps(speed);
 
     if (score >= limiar)
     {
@@ -295,80 +179,12 @@ void updateGame(int value)
 
     frameCounter++;
 
-    if (doublePointsActive)
+    if (isDoublePointsActive())
         score += pointMultiplier * 2;
     else
         score += pointMultiplier;
 
-    if (obstacles.empty() && score >= 30)
-    {
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            Obstacle obs;
-
-            int lane = rand() % 3;
-
-            if (lane == 0)
-                obs.x = -3.0f;
-            if (lane == 1)
-                obs.x = 0.0f;
-            if (lane == 2)
-                obs.x = 3.0f;
-
-            obs.z = -20.0f - i * 20.0f;
-
-            obstacles.push_back(obs);
-        }
-    }
-    if (score >= nextObstacleIncrease)
-    {
-        obstacleCount *= 1.5;
-        nextObstacleIncrease *= 2;
-
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            Obstacle obs;
-
-            int lane = rand() % 3;
-
-            if (lane == 0)
-                obs.x = -3.0f;
-            if (lane == 1)
-                obs.x = 0.0f;
-            if (lane == 2)
-                obs.x = 3.0f;
-
-            obs.z = -20.0f - i * 20.0f;
-
-            obstacles.push_back(obs);
-        }
-
-        printf("Obstaculos: %d | Proximo aumento: %d\n",
-               obstacleCount,
-               nextObstacleIncrease);
-    }
-
-    trackOffset += speed;
-    for (auto &obs : obstacles)
-    {
-
-        obs.z += speed;
-
-        if (obs.z > 5.0f)
-        {
-
-            int lane = rand() % 3;
-
-            if (lane == 0)
-                obs.x = -3.0f;
-            if (lane == 1)
-                obs.x = 0.0f;
-            if (lane == 2)
-                obs.x = 3.0f;
-
-            obs.z = -120.0f;
-        }
-    }
+    updateObstacles(speed, score);
 
     updatePlayer();
     if (sideHitWarning)
@@ -388,108 +204,6 @@ void updateGame(int value)
     checkPowerUps();
     glutPostRedisplay();
     glutTimerFunc(16, updateGame, 0);
-}
-
-void checkPowerUps()
-{
-    float playerX = getPlayerX();
-
-    for (auto &p : powerUps)
-    {
-        if (!p.active)
-            continue;
-
-        float distanceX = fabs(playerX - p.x);
-        float distanceZ = fabs(2.0f - p.z);
-
-        if (distanceX < 1.0f && distanceZ < 1.0f)
-        {
-            p.active = false;
-            p.respawnTimer = 600;
-
-            switch (p.type)
-            {
-            case DOUBLE_POINTS:
-
-                doublePointsActive = true;
-                doublePointsTimer = DOUBLE_POINTS_DURATION;
-
-                printf("Manga coletada! Pontos x2\n");
-
-                break;
-
-            default:
-                break;
-            }
-        }
-    }
-}
-
-void checkCollision()
-{
-
-    float playerX = getPlayerX();
-    float playerY = getPlayerY();
-
-    for (auto &obs : obstacles)
-    {
-
-        float distanceX = fabs(playerX - obs.x);
-        float distanceZ = fabs(2.0f - obs.z);
-
-        if (distanceX < 1.0f &&
-            distanceZ < 1.0f &&
-            playerY < 2.0f)
-        {
-            gameOver = true;
-        }
-    }
-}
-
-void drawText2D(float x, float y, const char *text)
-{
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, 1000, 0, 600);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glDisable(GL_DEPTH_TEST);
-
-    glRasterPos2f(x, y);
-    for (int i = 0; text[i] != '\0'; i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
-    }
-
-    glEnable(GL_DEPTH_TEST);
-}
-
-bool canMoveToLane(float targetX)
-{
-    for (auto &obs : obstacles)
-    {
-        float distanceX = fabs(targetX - obs.x);
-        float distanceZ = fabs(2.0f - obs.z);
-
-        if (distanceX < 1.0f && distanceZ < 1.5f)
-        {
-            if (sideHitWarning)
-            {
-                gameOver = true;
-            }
-            else
-            {
-                sideHitWarning = true;
-                sideHitTimer = 0;
-            }
-
-            return false;
-        }
-    }
-
-    return true;
 }
 
 void gameKeyboard(unsigned char key, int x, int y)
