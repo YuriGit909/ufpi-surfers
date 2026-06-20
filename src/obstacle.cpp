@@ -4,11 +4,14 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include "model.h"
 #include "coin.h"
 #include "obstacle.h"
 #include "player.h"
 
 using namespace std;
+
+Model busModel("./assets/models/fantasmao.obj");
 
 enum ObstacleType
 {
@@ -80,12 +83,12 @@ void drawObstacles()
         if (obs.type == BUS)
         {
             // Ônibus: vermelho, alto e comprido
-            glColor3f(1.0f, 0.0f, 0.0f);
-
             glPushMatrix();
-            glTranslatef(obs.x, 1.0f, obs.z);
-            glScalef(1.5f, 2.0f, 4.0f);
-            glutSolidCube(1.0f);
+            glTranslatef(obs.x, 0.0f, obs.z);
+            glScalef(1.3f, 1.3f, 1.3f);
+            glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
+
+            busModel.draw();
             glPopMatrix();
         }
         else if (obs.type == SPEED_BUMP)
@@ -166,15 +169,15 @@ void checkCollision()
         float distanceZ = fabs(2.0f - obs.z);
 
         if (obs.type == BUS)
-        {
-            if (distanceX < 1.0f &&
-                distanceZ < 2.0f &&
-                playerY < 2.0f)
-            {
-                gameOver = true;
-                return;
-            }
-        }
+{
+    if (distanceX < 1.0f &&
+        distanceZ < 7.0f &&
+        playerY < 2.0f)
+    {
+        gameOver = true;
+        return;
+    }
+}
 
         if (obs.type == SPEED_BUMP)
         {
@@ -198,7 +201,7 @@ bool canMoveToLane(float targetX)
 
         if (obs.type == BUS &&
             distanceX < 1.0f &&
-            distanceZ < 1.5f)
+            distanceZ < 7.0f)
         {
             if (sideHitWarning)
             {
