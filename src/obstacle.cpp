@@ -11,7 +11,9 @@
 
 using namespace std;
 
-Model busModel("./assets/models/bus_365.obj");
+Model bus401("./assets/models/bus_401_.obj");
+Model bus365("./assets/models/bus_365.obj");
+Model fantasmao("./assets/models/fantasmao.obj");
 
 enum ObstacleType
 {
@@ -19,11 +21,23 @@ enum ObstacleType
     SPEED_BUMP
 };
 
+enum BusType
+{
+    BUS_401,
+    BUS_365,
+    BUS_FANTASMAO
+};
+
 struct Obstacle
 {
     float x;
     float z;
+
     ObstacleType type;
+    BusType busType;
+
+    bool moving;
+    float ownSpeed;
 };
 
 vector<Obstacle> obstacles;
@@ -34,6 +48,30 @@ int nextObstacleIncrease = 5000;
 extern bool gameOver;
 extern bool sideHitWarning;
 extern int sideHitTimer;
+float nextRecycleZ = -180.0f;
+
+void createBusAt(float x, float z, bool moving)
+{
+    Obstacle obs;
+
+    obs.x = x;
+    obs.z = z;
+    obs.type = BUS;
+
+    obs.moving = moving;
+    obs.ownSpeed = moving ? 0.35f : 0.0f;
+
+    int chance = rand() % 100;
+
+    if (chance < 60)
+        obs.busType = BUS_401;
+    else if (chance < 90)
+        obs.busType = BUS_365;
+    else
+        obs.busType = BUS_FANTASMAO;
+
+    obstacles.push_back(obs);
+}
 
 void createObstacleAt(float x, float z, ObstacleType type)
 {
@@ -41,6 +79,25 @@ void createObstacleAt(float x, float z, ObstacleType type)
     obs.x = x;
     obs.z = z;
     obs.type = type;
+    obs.moving = false;
+    obs.ownSpeed = 0.0f;
+
+    if (type == BUS)
+    {
+        int chance = rand() % 100;
+
+        if (chance < 60)
+            obs.busType = BUS_401; // 60%
+
+        else if (chance < 90)
+            obs.busType = BUS_365; // 30%
+
+        else
+            obs.busType = BUS_FANTASMAO; // 10%
+
+        obs.moving = false;
+        obs.ownSpeed = 0.0f;
+    }
 
     if (type == SPEED_BUMP && rand() % 100 < 40)
         spawnCoinArc(obs.x, obs.z);
@@ -55,15 +112,15 @@ void createObstacle(float z)
     // Padrão 1: dois ônibus e uma faixa livre
     if (pattern == 0)
     {
-        createObstacleAt(-7.0f, z, BUS);
-        createObstacleAt(0.0f, z, BUS);
+        createBusAt(-7.0f, z, false);
+        createBusAt(0.0f, z, false);
     }
 
     // Padrão 2: ônibus nas laterais, meio livre
     else if (pattern == 1)
     {
-        createObstacleAt(-7.0f, z, BUS);
-        createObstacleAt(7.0f, z, BUS);
+        createBusAt(-7.0f, z, false);
+        createBusAt(7.0f, z, false);
     }
 
     // Padrão 3: três lombadas, uma em cada faixa
@@ -78,17 +135,21 @@ void createObstacle(float z)
     else if (pattern == 3)
     {
         createObstacleAt(-7.0f, z, SPEED_BUMP);
-        createObstacleAt(7.0f, z, BUS);
+        createBusAt(7.0f, z, rand() % 100 < 35);
     }
 
     // Padrão 5: obstáculo único
     else
     {
         int lane = rand() % 3;
-        float x = lane == 0 ? -7.0f : lane == 1 ? 0.0f : 7.0f;
+        float x = lane == 0 ? -7.0f : lane == 1 ? 0.0f
+                                                : 7.0f;
 
         ObstacleType type = rand() % 2 == 0 ? BUS : SPEED_BUMP;
-        createObstacleAt(x, z, type);
+        if (type == BUS)
+            createBusAt(x, z, rand() % 100 < 35);
+        else
+            createObstacleAt(x, z, type);
     }
 }
 void initObstacles()
@@ -96,6 +157,7 @@ void initObstacles()
     obstacleCount = 5;
     nextObstacleIncrease = 5000;
     obstacles.clear();
+    nextRecycleZ = -180.0f;
 }
 
 void drawObstacles()
@@ -104,13 +166,30 @@ void drawObstacles()
     {
         if (obs.type == BUS)
         {
-            // Ônibus: vermelho, alto e comprido
             glPushMatrix();
+
             glTranslatef(obs.x, 0.0f, obs.z);
             glScalef(2.0f, 2.0f, 2.0f);
-            glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
 
-            busModel.draw();
+            switch (obs.busType)
+            {
+            case BUS_401:
+                glScalef(0.07f, 0.07f, 0.07f);
+                glRotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+                bus401.draw();
+                break;
+
+            case BUS_365:
+                glScalef(1.0f, 1.0f, 1.0f);
+                bus365.draw();
+                break;
+
+            case BUS_FANTASMAO:
+                glScalef(0.7f, 0.7f, 0.7f);
+                fantasmao.draw();
+                break;
+            }
+
             glPopMatrix();
         }
         else if (obs.type == SPEED_BUMP)
@@ -138,36 +217,64 @@ void updateObstacles(float speed, float score)
     }
 
     if (score >= nextObstacleIncrease)
-{
-    obstacleCount = obstacleCount * 1.2f;
-    nextObstacleIncrease *= 2;
-
-    obstacles.clear();
-
-    for (int i = 0; i < int(obstacleCount); i++)
     {
-       createObstacle(-200.0f - i * 80.0f);
-    }
+        obstacleCount = obstacleCount * 1.2f;
+        nextObstacleIncrease *= 2;
 
-    printf("Obstaculos: %d | Proximo aumento: %d\n",
-           obstacleCount,
-           nextObstacleIncrease);
-}
+        obstacles.clear();
+
+        for (int i = 0; i < int(obstacleCount); i++)
+        {
+            createObstacle(-200.0f - i * 80.0f);
+        }
+
+        printf("Obstaculos: %d | Proximo aumento: %d\n",
+               obstacleCount,
+               nextObstacleIncrease);
+    }
 
     for (auto &obs : obstacles)
     {
         obs.z += speed;
 
+        if (obs.type == BUS && obs.moving)
+        {
+            obs.z += obs.ownSpeed;
+        }
+
         if (obs.z > 15.0f)
         {
             int lane = rand() % 3;
 
-            if (lane == 0) obs.x = -7.0f;
-            if (lane == 1) obs.x = 0.0f;
-            if (lane == 2) obs.x = 7.0f;
+            if (lane == 0)
+                obs.x = -7.0f;
+            if (lane == 1)
+                obs.x = 0.0f;
+            if (lane == 2)
+                obs.x = 7.0f;
 
-            obs.z = -180.0f;
+            obs.z = nextRecycleZ;
+            nextRecycleZ -= 80.0f;
 
+            if (nextRecycleZ < -600.0f)
+            {
+                nextRecycleZ = -180.0f;
+            }
+
+            if (obs.type == BUS)
+            {
+                int chance = rand() % 100;
+
+                if (chance < 60)
+                    obs.busType = BUS_401;
+                else if (chance < 90)
+                    obs.busType = BUS_365;
+                else
+                    obs.busType = BUS_FANTASMAO;
+
+                obs.moving = (rand() % 100 < 10);
+                obs.ownSpeed = obs.moving ? 0.35f : 0.0f;
+            }
             if (obs.type == SPEED_BUMP)
             {
                 if (rand() % 100 < 40)
@@ -190,15 +297,36 @@ void checkCollision()
         float distanceZ = fabs(2.0f - obs.z);
 
         if (obs.type == BUS)
-{
-    if (distanceX < 1.0f &&
-        distanceZ < 7.0f &&
-        playerY < 2.0f)
-    {
-        gameOver = true;
-        return;
-    }
-}
+        {
+            float hitX = 1.0f;
+            float hitZ = 7.0f;
+
+            switch (obs.busType)
+            {
+            case BUS_401:
+                hitX = 1.2f;
+                hitZ = 10.0f;
+                break;
+
+            case BUS_365:
+                hitX = 1.0f;
+                hitZ = 7.0f;
+                break;
+
+            case BUS_FANTASMAO:
+                hitX = 1.0f;
+                hitZ = 8.0f;
+                break;
+            }
+
+            if (distanceX < hitX &&
+                distanceZ < hitZ &&
+                playerY < 2.0f)
+            {
+                gameOver = true;
+                return;
+            }
+        }
 
         if (obs.type == SPEED_BUMP)
         {
@@ -220,21 +348,44 @@ bool canMoveToLane(float targetX)
         float distanceX = fabs(targetX - obs.x);
         float distanceZ = fabs(2.0f - obs.z);
 
-        if (obs.type == BUS &&
-            distanceX < 1.0f &&
-            distanceZ < 7.0f)
+        if (obs.type == BUS)
         {
-            if (sideHitWarning)
+            float hitX = 1.0f;
+            float hitZ = 7.0f;
+
+            switch (obs.busType)
             {
-                gameOver = true;
-            }
-            else
-            {
-                sideHitWarning = true;
-                sideHitTimer = 0;
+            case BUS_401:
+                hitX = 1.2f;
+                hitZ = 10.0f;
+                break;
+
+            case BUS_365:
+                hitX = 1.0f;
+                hitZ = 7.0f;
+                break;
+
+            case BUS_FANTASMAO:
+                hitX = 1.0f;
+                hitZ = 8.0f;
+                break;
             }
 
-            return false;
+            if (distanceX < hitX &&
+                distanceZ < hitZ)
+            {
+                if (sideHitWarning)
+                {
+                    gameOver = true;
+                }
+                else
+                {
+                    sideHitWarning = true;
+                    sideHitTimer = 0;
+                }
+
+                return false;
+            }
         }
     }
 

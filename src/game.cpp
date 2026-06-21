@@ -11,7 +11,6 @@
 #include <cstdio>
 #include "model.h"
 
-
 using namespace std;
 
 float cameraX = 0.0f;
@@ -21,14 +20,15 @@ int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 
 Model streetModel("./assets/models/street_trees.obj");
+Model streetLowModel("./assets/models/street_trees_low.obj");
 float score = 0;
 float pointMultiplier = 0.25;
 
 int frameCounter = 0;
 int limiar = 500;
 
-
 bool gameOver = false;
+bool paused = false;
 
 float trackOffset = 0.0f;
 
@@ -59,19 +59,19 @@ void setupGameCamera()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-  float targetCameraX = getPlayerX() * 0.4f;
+    float targetCameraX = getPlayerX() * 0.4f;
 
-cameraX += (targetCameraX - cameraX) * 0.08f;
+    cameraX += (targetCameraX - cameraX) * 0.08f;
 
-gluLookAt(
-    cameraX, 5.0f, 10.0f,
-    cameraX, 1.5f, -10.0f,
-    0.0f, 1.0f, 0.0f);
+    gluLookAt(
+        cameraX, 5.0f, 10.0f,
+        cameraX, 1.5f, -10.0f,
+        0.0f, 1.0f, 0.0f);
 }
 
 void initGame()
 {
-    
+
     sideHitWarning = false;
     sideHitTimer = 0;
 
@@ -91,7 +91,6 @@ void initGame()
     initPowerUps();
     initCoins();
 }
-
 
 void drawTrack()
 {
@@ -115,27 +114,46 @@ void drawTrack()
     }
 }
 
-void drawStreet()
+/*void drawStreet()
 {
     float segmentLength = 150.0f;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
     {
         float z = -i * segmentLength + fmod(trackOffset, segmentLength);
 
         glPushMatrix();
-            glTranslatef(0.0f, 0.0f, z);
-            streetModel.draw();
+        glTranslatef(0.0f, 0.0f, z);
+        streetModel.draw();
+        glPopMatrix();
+    }
+}*/
+
+void drawStreet()
+{
+    float segmentLength = 150.0f;
+
+    for (int i = 0; i < 3; i++)
+    {
+        float z = -i * segmentLength + fmod(trackOffset, segmentLength);
+
+        glPushMatrix();
+        glTranslatef(0.0f, 0.0f, z);
+
+        if (i <= 2)
+            streetModel.draw(); // perto, bonito
+        else
+            streetLowModel.draw(); // longe, leve
+
         glPopMatrix();
     }
 }
-
 
 void drawGame()
 {
     setupGameCamera();
 
-    //drawTrack();
+    // drawTrack();
     drawStreet();
     drawObstacles();
     drawPowerUps();
@@ -171,10 +189,33 @@ void drawGame()
         drawText2D(430, 330, "GAME OVER");
         drawText2D(350, 290, "PRESSIONE ENTER PARA REINICIAR");
     }
+
+    if (paused)
+    {
+        glColor3f(1.0f, 1.0f, 0.0f);
+
+        drawText2D(470, 320, "PAUSADO");
+        drawText2D(390, 280, "PRESSIONE P PARA CONTINUAR");
+    }
 }
 
 void updateGame(int value)
 {
+
+    if (gameOver)
+    {
+        glutPostRedisplay();
+        glutTimerFunc(16, updateGame, 0);
+        return;
+    }
+
+    if (paused)
+    {
+        glutPostRedisplay();
+        glutTimerFunc(16, updateGame, 0);
+        return;
+    }
+
     trackOffset += speed;
 
     updateCoins(speed, score);
@@ -193,13 +234,6 @@ void updateGame(int value)
             limiar,
             pointMultiplier,
             speed);
-    }
-
-    if (gameOver)
-    {
-        glutPostRedisplay();
-        glutTimerFunc(16, updateGame, 0);
-        return;
     }
 
     frameCounter++;
@@ -229,7 +263,6 @@ void updateGame(int value)
     checkPowerUps();
     glutPostRedisplay();
     glutTimerFunc(16, updateGame, 0);
-
 }
 
 void gameKeyboard(unsigned char key, int x, int y)
@@ -260,6 +293,22 @@ void gameKeyboard(unsigned char key, int x, int y)
 
         if (canMoveToLane(targetX))
             movePlayerRight();
+    }
+
+    if (key == 'p' || key == 'P')
+    {
+        paused = !paused;
+        return;
+    }
+
+    if (key == 's' || key == 'S')
+    {
+        roll();
+    }
+
+    if (paused)
+    {
+        return;
     }
 
     if (key == ' ')

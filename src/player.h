@@ -9,5 +9,7 @@ void updatePlayer();
 
 float getPlayerX();
 float getPlayerY();
+void roll();
+bool isRolling();
 
 #endif
