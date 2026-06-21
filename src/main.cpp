@@ -12,6 +12,7 @@ enum Screen {
 };
 
 Screen currentScreen = MENU;
+bool gameTimerStarted = false;
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -28,10 +29,14 @@ void display() {
 void keyboard(unsigned char key, int x, int y) {
     if (currentScreen == MENU) {
         if (key == 13) {
-            currentScreen = PLAYING;
-            initGame();
-            glutTimerFunc(16, updateGame, 0);
-        }
+    currentScreen = PLAYING;
+    initGame();
+
+    if (!gameTimerStarted) {
+        glutTimerFunc(16, updateGame, 0);
+        gameTimerStarted = true;
+    }
+}
 
         if (key == 27) {
             exit(0);

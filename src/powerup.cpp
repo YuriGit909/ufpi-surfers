@@ -123,9 +123,9 @@ void updatePowerUps(float speed)
             {
                 int lane = rand() % 3;
 
-                if (lane == 0) p.x = -3.0f;
+                if (lane == 0) p.x = -7.0f;
                 if (lane == 1) p.x = 0.0f;
-                if (lane == 2) p.x = 3.0f;
+                if (lane == 2) p.x = 7.0f;
 
                 p.z = -250.0f;
                 p.active = true;

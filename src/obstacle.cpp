@@ -11,7 +11,7 @@
 
 using namespace std;
 
-Model busModel("./assets/models/fantasmao.obj");
+Model busModel("./assets/models/bus_365.obj");
 
 enum ObstacleType
 {
@@ -35,40 +35,62 @@ extern bool gameOver;
 extern bool sideHitWarning;
 extern int sideHitTimer;
 
-void createObstacle(float z)
+void createObstacleAt(float x, float z, ObstacleType type)
 {
     Obstacle obs;
-
-    int lane = rand() % 3;
-
-    if (lane == 0)
-        obs.x = -3.0f;
-    if (lane == 1)
-        obs.x = 0.0f;
-    if (lane == 2)
-        obs.x = 3.0f;
-
+    obs.x = x;
     obs.z = z;
+    obs.type = type;
 
-    int type = rand() % 2;
+    if (type == SPEED_BUMP && rand() % 100 < 40)
+        spawnCoinArc(obs.x, obs.z);
 
-    if (type == 0)
-    {
-        obs.type = BUS;
-    }
-    else
-    {
-        obs.type = SPEED_BUMP;
-
-        // 40% de chance de ter arco de fichas em cima da lombada
-        if (rand() % 100 < 40)
-        {
-            spawnCoinArc(obs.x, obs.z);
-        }
-    }
     obstacles.push_back(obs);
 }
 
+void createObstacle(float z)
+{
+    int pattern = rand() % 5;
+
+    // Padrão 1: dois ônibus e uma faixa livre
+    if (pattern == 0)
+    {
+        createObstacleAt(-7.0f, z, BUS);
+        createObstacleAt(0.0f, z, BUS);
+    }
+
+    // Padrão 2: ônibus nas laterais, meio livre
+    else if (pattern == 1)
+    {
+        createObstacleAt(-7.0f, z, BUS);
+        createObstacleAt(7.0f, z, BUS);
+    }
+
+    // Padrão 3: três lombadas, uma em cada faixa
+    else if (pattern == 2)
+    {
+        createObstacleAt(-7.0f, z, SPEED_BUMP);
+        createObstacleAt(0.0f, z, SPEED_BUMP);
+        createObstacleAt(7.0f, z, SPEED_BUMP);
+    }
+
+    // Padrão 4: uma lombada e um ônibus
+    else if (pattern == 3)
+    {
+        createObstacleAt(-7.0f, z, SPEED_BUMP);
+        createObstacleAt(7.0f, z, BUS);
+    }
+
+    // Padrão 5: obstáculo único
+    else
+    {
+        int lane = rand() % 3;
+        float x = lane == 0 ? -7.0f : lane == 1 ? 0.0f : 7.0f;
+
+        ObstacleType type = rand() % 2 == 0 ? BUS : SPEED_BUMP;
+        createObstacleAt(x, z, type);
+    }
+}
 void initObstacles()
 {
     obstacleCount = 5;
@@ -85,7 +107,7 @@ void drawObstacles()
             // Ônibus: vermelho, alto e comprido
             glPushMatrix();
             glTranslatef(obs.x, 0.0f, obs.z);
-            glScalef(1.3f, 1.3f, 1.3f);
+            glScalef(2.0f, 2.0f, 2.0f);
             glRotatef(0.0f, 0.0f, 1.0f, 0.0f);
 
             busModel.draw();
@@ -111,41 +133,40 @@ void updateObstacles(float speed, float score)
     {
         for (int i = 0; i < obstacleCount; i++)
         {
-            createObstacle(-20.0f - i * 20.0f);
+            createObstacle(-200.0f - i * 80.0f);
         }
     }
 
     if (score >= nextObstacleIncrease)
+{
+    obstacleCount = obstacleCount * 1.2f;
+    nextObstacleIncrease *= 2;
+
+    obstacles.clear();
+
+    for (int i = 0; i < int(obstacleCount); i++)
     {
-        obstacleCount *= 1.5;
-        nextObstacleIncrease *= 2;
-
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            createObstacle(-20.0f - i * 20.0f);
-        }
-
-        printf("Obstaculos: %d | Proximo aumento: %d\n",
-               obstacleCount,
-               nextObstacleIncrease);
+       createObstacle(-200.0f - i * 80.0f);
     }
+
+    printf("Obstaculos: %d | Proximo aumento: %d\n",
+           obstacleCount,
+           nextObstacleIncrease);
+}
 
     for (auto &obs : obstacles)
     {
         obs.z += speed;
 
-        if (obs.z > 5.0f)
+        if (obs.z > 15.0f)
         {
             int lane = rand() % 3;
 
-            if (lane == 0)
-                obs.x = -3.0f;
-            if (lane == 1)
-                obs.x = 0.0f;
-            if (lane == 2)
-                obs.x = 3.0f;
+            if (lane == 0) obs.x = -7.0f;
+            if (lane == 1) obs.x = 0.0f;
+            if (lane == 2) obs.x = 7.0f;
 
-            obs.z = -120.0f;
+            obs.z = -180.0f;
 
             if (obs.type == SPEED_BUMP)
             {

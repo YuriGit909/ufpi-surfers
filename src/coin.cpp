@@ -2,7 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <cstdlib>
-
+#include <algorithm>
 #include "coin.h"
 #include "player.h"
 
@@ -30,9 +30,9 @@ void spawnCoinLine()
 
     float x = 0.0f;
 
-    if (lane == 0) x = -3.0f;
+    if (lane == 0) x = -7.0f;
     if (lane == 1) x = 0.0f;
-    if (lane == 2) x = 3.0f;
+    if (lane == 2) x = 7.0f;
 
     for (int i = 0; i < 6; i++)
     {
@@ -65,7 +65,7 @@ void updateCoins(float speed, float score)
         spawnCoinLine();
 
         // próximo conjunto só depois de mais pontos
-        nextCoinSpawnScore += 20;
+        nextCoinSpawnScore += 50;
     }
 
     for (auto &c : coins)
@@ -97,6 +97,14 @@ void updateCoins(float speed, float score)
         coinLineActive = false;
         coins.clear();
     }
+
+    coins.erase(
+    remove_if(coins.begin(), coins.end(),
+        [](Coin &c) {
+            return !c.active;
+        }),
+    coins.end()
+);
 }
 
 void drawCoins()
@@ -111,7 +119,7 @@ void drawCoins()
         glPushMatrix();
             glTranslatef(c.x, c.y, c.z);
             glScalef(0.45f, 0.45f, 0.15f);
-            glutSolidSphere(1.0f, 20, 20);
+            glutSolidSphere(1.0f, 8, 8);
         glPopMatrix();
     }
 }
@@ -146,19 +154,14 @@ void spawnCoinArc(float x, float z)
 
         c.x = x;
 
-        float t = (float)i / (quantidade - 1); // 0 até 1
+        float t = (float)i / (quantidade - 1);
 
         c.z = z - 4.0f + i * 1.6f;
-
-        // arco: começa baixo, sobe no meio, desce no fim
         c.y = 1.2f + sin(t * 3.14159f) * 2.0f;
-
         c.active = true;
 
         coins.push_back(c);
     }
-
-    coinLineActive = true;
 }
 
 int getRuCoins()

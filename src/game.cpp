@@ -9,14 +9,18 @@
 #include "coin.h"
 #include "obstacle.h"
 #include <cstdio>
+#include "model.h"
+
 
 using namespace std;
+
+float cameraX = 0.0f;
 
 bool sideHitWarning = false;
 int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 
-
+Model streetModel("./assets/models/street_trees.obj");
 float score = 0;
 float pointMultiplier = 0.25;
 
@@ -28,7 +32,7 @@ bool gameOver = false;
 
 float trackOffset = 0.0f;
 
-float baseSpeed = 0.25f;
+float baseSpeed = 0.60f;
 float speed = baseSpeed;
 
 void checkPowerUps();
@@ -55,15 +59,18 @@ void setupGameCamera()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    gluLookAt(
-        0.0f, 5.0f, 10.0f,
-        0.0f, 1.5f, -10.0f,
-        0.0f, 1.0f, 0.0f);
+  float targetCameraX = getPlayerX() * 0.4f;
+
+cameraX += (targetCameraX - cameraX) * 0.08f;
+
+gluLookAt(
+    cameraX, 5.0f, 10.0f,
+    cameraX, 1.5f, -10.0f,
+    0.0f, 1.0f, 0.0f);
 }
 
 void initGame()
 {
-
     
     sideHitWarning = false;
     sideHitTimer = 0;
@@ -84,6 +91,7 @@ void initGame()
     initPowerUps();
     initCoins();
 }
+
 
 void drawTrack()
 {
@@ -107,12 +115,28 @@ void drawTrack()
     }
 }
 
+void drawStreet()
+{
+    float segmentLength = 150.0f;
+
+    for (int i = 0; i < 4; i++)
+    {
+        float z = -i * segmentLength + fmod(trackOffset, segmentLength);
+
+        glPushMatrix();
+            glTranslatef(0.0f, 0.0f, z);
+            streetModel.draw();
+        glPopMatrix();
+    }
+}
+
 
 void drawGame()
 {
     setupGameCamera();
 
-    drawTrack();
+    //drawTrack();
+    drawStreet();
     drawObstacles();
     drawPowerUps();
     drawCoins();
@@ -151,6 +175,7 @@ void drawGame()
 
 void updateGame(int value)
 {
+    trackOffset += speed;
 
     updateCoins(speed, score);
     checkCoinCollision();
@@ -204,6 +229,7 @@ void updateGame(int value)
     checkPowerUps();
     glutPostRedisplay();
     glutTimerFunc(16, updateGame, 0);
+
 }
 
 void gameKeyboard(unsigned char key, int x, int y)
@@ -222,7 +248,7 @@ void gameKeyboard(unsigned char key, int x, int y)
 
     if (key == 'a' || key == 'A')
     {
-        float targetX = getPlayerX() - 3.0f;
+        float targetX = getPlayerX() - 7.0f;
 
         if (canMoveToLane(targetX))
             movePlayerLeft();
@@ -230,7 +256,7 @@ void gameKeyboard(unsigned char key, int x, int y)
 
     if (key == 'd' || key == 'D')
     {
-        float targetX = getPlayerX() + 3.0f;
+        float targetX = getPlayerX() + 7.0f;
 
         if (canMoveToLane(targetX))
             movePlayerRight();

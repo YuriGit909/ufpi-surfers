@@ -2,15 +2,15 @@
 #include "player.h"
 
 
-float lanes[3] = {-3.0f, 0.0f, 3.0f};
+float lanes[3] = {-7.0f, 0.0f, 7.0f};
 int currentLane = 1;
 
 float playerY = 1.0f;
 float velocityY = 0.0f;
 bool jumping = false;
 
-const float gravity = -0.03f;
-const float jumpForce = 0.5f;
+const float gravity = -0.06f;
+const float jumpForce = 0.75f;
 
 void drawPlayer() {
     glPushMatrix();
