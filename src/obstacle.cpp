@@ -208,11 +208,11 @@ void drawObstacles()
 
 void updateObstacles(float speed, float score)
 {
-    if (obstacles.empty() && score >= 30)
+    if (obstacles.empty())
     {
         for (int i = 0; i < obstacleCount; i++)
         {
-            createObstacle(-200.0f - i * 80.0f);
+            createObstacle(-120.0f - i * 45.0f);
         }
     }
 
@@ -225,7 +225,7 @@ void updateObstacles(float speed, float score)
 
         for (int i = 0; i < int(obstacleCount); i++)
         {
-            createObstacle(-200.0f - i * 80.0f);
+            createObstacle(-120.0f - i * 45.0f);
         }
 
         printf("Obstaculos: %d | Proximo aumento: %d\n",
@@ -254,7 +254,7 @@ void updateObstacles(float speed, float score)
                 obs.x = 7.0f;
 
             obs.z = nextRecycleZ;
-            nextRecycleZ -= 80.0f;
+            nextRecycleZ -= 50.0f;
 
             if (nextRecycleZ < -600.0f)
             {

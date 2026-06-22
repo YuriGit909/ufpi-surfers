@@ -13,7 +13,7 @@ const float jumpForce = 0.75f;
 bool rolling = false;
 int rollTimer = 0;
 
-const int ROLL_DURATION = 30; // ~0,5s
+const int ROLL_DURATION = 10; // ~0,5s
 
 void drawPlayer()
 {

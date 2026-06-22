@@ -140,7 +140,7 @@ void drawStreet()
         glPushMatrix();
         glTranslatef(0.0f, 0.0f, z);
 
-        if (i <= 2)
+        if (i <= 1)
             streetModel.draw(); // perto, bonito
         else
             streetLowModel.draw(); // longe, leve
