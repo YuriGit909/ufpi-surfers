@@ -10,6 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Bark_diffuse.png
 
 newmtl Branch.001
 Ns 360.000000
@@ -20,6 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Branch_diffuse.png
 
 newmtl Leaf.001
 Ns 360.000000
@@ -30,6 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Leaf_diffuse.png
 
 newmtl Material.003
 Ns 250.000000

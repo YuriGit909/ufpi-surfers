@@ -2,5 +2,6 @@
 #define MENU_H
 
 void drawMenu();
+void drawMenuIntro(float cameraZ);
 
 #endif

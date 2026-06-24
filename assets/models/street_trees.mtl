@@ -1,16 +1,6 @@
 # Blender MTL File: 'street_trees.blend'
 # Material Count: 16
 
-newmtl Bark
-Ns 359.999993
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.000000
-d 1.000000
-illum 2
-
 newmtl Bark.001
 Ns 359.999993
 Ka 1.000000 1.000000 1.000000
@@ -20,8 +10,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Bark_diffuse.png
 
-newmtl Branch
+newmtl Bark.002
 Ns 359.999993
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -30,6 +21,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Bark_diffuse.png
 
 newmtl Branch.001
 Ns 359.999993
@@ -40,8 +32,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Branch_diffuse.png
 
-newmtl Leaf
+newmtl Branch.002
 Ns 359.999993
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -50,6 +43,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Branch_diffuse.png
 
 newmtl Leaf.001
 Ns 359.999993
@@ -60,6 +54,18 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
+map_Kd ../textures/Leaf_specularGlossiness.png
+
+newmtl Leaf.002
+Ns 359.999993
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ../textures/Leaf_specularGlossiness.png
 
 newmtl Material.005
 Ns 250.000000
@@ -70,6 +76,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
+
 
 newmtl Material.008
 Ns 250.000000
@@ -101,25 +108,6 @@ Ni 1.450000
 d 1.000000
 illum 2
 
-newmtl Scene_-_Root
-Ns 159.999981
-Ka 1.000000 1.000000 1.000000
-Kd 0.142377 0.067383 0.038939
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
-
-newmtl Scene_-_Root.001
-Ns 159.999981
-Ka 1.000000 1.000000 1.000000
-Kd 0.142377 0.067383 0.038939
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
 
 newmtl Scene_-_Root.002
 Ns 159.999981
@@ -131,7 +119,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Scene_-_Root.003
+newmtl Scene_-_Root.004
 Ns 159.999981
 Ka 1.000000 1.000000 1.000000
 Kd 0.142377 0.067383 0.038939
@@ -140,6 +128,27 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
+
+newmtl Scene_-_Root.005
+Ns 159.999981
+Ka 1.000000 1.000000 1.000000
+Kd 0.142377 0.067383 0.038939
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl Scene_-_Root.006
+Ns 159.999981
+Ka 1.000000 1.000000 1.000000
+Kd 0.142377 0.067383 0.038939
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd ../textures/Leaf_specularGlossiness.png
 
 newmtl material
 Ns 250.000000
@@ -150,8 +159,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Bump .
-map_Kd .
+map_Kd ../textures/onibus.jpg
 
 newmtl material.001
 Ns 250.000000
@@ -162,5 +170,6 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Bump .
-map_Kd .
+map_Kd ../textures/onibus.jpg
+
+

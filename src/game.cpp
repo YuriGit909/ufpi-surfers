@@ -19,8 +19,9 @@ bool sideHitWarning = false;
 int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 
-Model streetModel("./assets/models/street_trees.obj");
-Model streetLowModel("./assets/models/street_trees_low.obj");
+Model* streetModel = nullptr;
+Model* streetLowModel = nullptr;
+
 float score = 0;
 float pointMultiplier = 0.25;
 
@@ -36,6 +37,12 @@ float baseSpeed = 0.60f;
 float speed = baseSpeed;
 
 void checkPowerUps();
+
+void initGameModels()
+{
+    streetModel = new Model("./assets/models/street_trees.obj");
+    streetLowModel = new Model("./assets/models/street_trees_low.obj");
+}
 
 void drawCube(float x, float y, float z, float sx, float sy, float sz)
 {
@@ -140,10 +147,19 @@ void drawStreet()
         glPushMatrix();
         glTranslatef(0.0f, 0.0f, z);
 
-        if (i <= 1)
-            streetModel.draw(); // perto, bonito
+        if (streetModel != nullptr)
+            streetModel->draw();
+        
+        /*if (i <= 1)
+        {
+            if (streetModel != nullptr)
+                streetModel->draw();
+        }
         else
-            streetLowModel.draw(); // longe, leve
+        {
+            if (streetLowModel != nullptr)
+                streetLowModel->draw();
+        }*/
 
         glPopMatrix();
     }

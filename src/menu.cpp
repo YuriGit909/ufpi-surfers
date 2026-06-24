@@ -19,6 +19,39 @@ void drawStrokeText(float x, float y, float scale, const char* text)
     glPopMatrix();
 }
 
+void setupIntroCamera(float cameraZ)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    gluPerspective(60.0, 1000.0/600.0, 0.1, 1000.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    float cameraX = -2.0f - (18.0f - cameraZ) * 0.25f;
+
+gluLookAt(
+    cameraX, 0.8f, cameraZ,
+    -9.5f, 0.3f, -20.0f,
+    0.0f, 1.0f, 0.0f
+);
+}
+
+void drawMenuIntro(float cameraZ)
+{
+    glClearColor(0.55f, 0.75f, 0.95f, 1.0f);
+
+    setupIntroCamera(cameraZ);
+
+    glPushMatrix();
+        glTranslatef(0.0f, -2.0f, -8.0f);
+        glScalef(0.35f, 0.35f, 0.35f);
+        glRotatef(-92.0f, 0.0f, 1.0f, 0.0f);
+        portal.draw();
+    glPopMatrix();
+}
+
 void drawBitmapText(float x, float y, const char* text)
 {
     glRasterPos2f(x, y);
