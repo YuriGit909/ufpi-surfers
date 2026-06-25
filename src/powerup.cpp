@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <vector>
 #include <cmath>
@@ -6,8 +7,16 @@
 
 #include "powerup.h"
 #include "player.h"
+#include "model.h"
+
+Model* mangaModel = nullptr;
 
 using namespace std;
+
+void initPowerUpModels()
+{
+    mangaModel = new Model("./assets/models/manga.obj");
+}
 
 enum PowerType
 {
@@ -43,12 +52,17 @@ void drawPowerUps()
         {
         case DOUBLE_POINTS:
 
-            glColor3f(1.0f, 0.8f, 0.0f);
-
             glPushMatrix();
-            glTranslatef(p.x, 0.5f, p.z);
-            glutSolidSphere(0.5f, 20, 20);
-            glPopMatrix();
+
+glTranslatef(p.x, 1.2f, p.z);
+
+// ajuste depois conforme necessário
+glScalef(1.0f, 1.0f, 1.0f);
+
+if (mangaModel)
+    mangaModel->draw();
+
+glPopMatrix();
 
             break;
 

@@ -1,10 +1,15 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
+
 #include <cstdlib>
 
 #include "menu.h"
 #include "game.h"
+#include "powerup.h"
+#include "obstacle.h"
 #include <ctime>
 #include <cstdlib>
+
 enum Screen {
     MENU,
     INTRO,
@@ -127,6 +132,9 @@ int main(int argc, char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(1000, 600);
     glutCreateWindow("UFPI Surfers");
+    glewInit();
+    initObstacleModels();
+    initPowerUpModels();
     initGameModels();
     srand(time(NULL));
    glEnable(GL_DEPTH_TEST);

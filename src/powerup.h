@@ -7,5 +7,6 @@ void updatePowerUps(float speed);
 void checkPowerUps();
 
 bool isDoublePointsActive();
+void initPowerUpModels();
 
 #endif

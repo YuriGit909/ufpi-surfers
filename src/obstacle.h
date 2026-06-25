@@ -6,5 +6,6 @@ void drawObstacles();
 void updateObstacles(float speed, float score);
 void checkCollision();
 bool canMoveToLane(float targetX);
+void initObstacleModels();
 
 #endif

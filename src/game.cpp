@@ -1,3 +1,4 @@
+
 #include <GL/glut.h>
 #include <iostream>
 #include <cmath>
@@ -147,10 +148,8 @@ void drawStreet()
         glPushMatrix();
         glTranslatef(0.0f, 0.0f, z);
 
-        if (streetModel != nullptr)
-            streetModel->draw();
         
-        /*if (i <= 1)
+        if (i <= 1)
         {
             if (streetModel != nullptr)
                 streetModel->draw();
@@ -159,7 +158,7 @@ void drawStreet()
         {
             if (streetLowModel != nullptr)
                 streetLowModel->draw();
-        }*/
+        }
 
         glPopMatrix();
     }

@@ -1,3 +1,4 @@
+
 #include <GL/glut.h>
 #include <vector>
 #include <cmath>
@@ -10,10 +11,16 @@
 #include "player.h"
 
 using namespace std;
-
+Model* speedBumpModel = nullptr;
 Model bus401("./assets/models/bus_401_.obj");
 Model bus365("./assets/models/bus_365.obj");
 Model fantasmao("./assets/models/fantasmao.obj");
+
+
+void initObstacleModels()
+{
+    speedBumpModel = new Model("./assets/models/speedbump.obj");
+}
 
 enum ObstacleType
 {
@@ -193,16 +200,16 @@ void drawObstacles()
             glPopMatrix();
         }
         else if (obs.type == SPEED_BUMP)
-        {
-            // Lombada: laranja, baixa e larga
-            glColor3f(1.0f, 0.5f, 0.0f);
-
-            glPushMatrix();
-            glTranslatef(obs.x, 0.25f, obs.z);
-            glScalef(2.2f, 0.4f, 1.0f);
-            glutSolidCube(1.0f);
-            glPopMatrix();
-        }
+{
+    if (speedBumpModel)
+    {
+        glPushMatrix();
+        glTranslatef(obs.x, 0.0f, obs.z);
+        glScalef(1.5f, 6.0f, 3.0f);
+        speedBumpModel->draw();
+        glPopMatrix();
+    }
+}
     }
 }
 
@@ -212,7 +219,7 @@ void updateObstacles(float speed, float score)
     {
         for (int i = 0; i < obstacleCount; i++)
         {
-            createObstacle(-120.0f - i * 45.0f);
+            createObstacle(-200.0f - i * 80.0f);
         }
     }
 
@@ -225,7 +232,7 @@ void updateObstacles(float speed, float score)
 
         for (int i = 0; i < int(obstacleCount); i++)
         {
-            createObstacle(-120.0f - i * 45.0f);
+             createObstacle(-200.0f - i * 80.0f);
         }
 
         printf("Obstaculos: %d | Proximo aumento: %d\n",
@@ -254,7 +261,7 @@ void updateObstacles(float speed, float score)
                 obs.x = 7.0f;
 
             obs.z = nextRecycleZ;
-            nextRecycleZ -= 50.0f;
+            nextRecycleZ -= 80.0f;
 
             if (nextRecycleZ < -600.0f)
             {

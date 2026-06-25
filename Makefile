@@ -1,5 +1,5 @@
 all:
-	g++ src/*.cpp -o ufpi-surfers -lGL -lGLU -lglut -lassimp
+	g++ src/*.cpp -o ufpi-surfers -lGLEW -lGL -lGLU -lglut -lassimp
 
 run:
 	./ufpi-surfers
