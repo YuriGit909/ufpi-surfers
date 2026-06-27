@@ -366,7 +366,11 @@ Model::Model(const std::string &path)
 
             cout << "Material " << mesh->mMaterialIndex << " (" << data.materialName << ")" << endl;
 
-
+            cout << "  vertices: " << mesh->mNumVertices << endl;
+            cout << "  tem UV0: " << (mesh->HasTextureCoords(0) ? "SIM" : "NAO") << endl;
+            cout << "  tem UV1: " << (mesh->HasTextureCoords(1) ? "SIM" : "NAO") << endl;
+            cout << "  tem UV2: " << (mesh->HasTextureCoords(2) ? "SIM" : "NAO") << endl;
+            cout << "  tem UV3: " << (mesh->HasTextureCoords(3) ? "SIM" : "NAO") << endl;
 
             for (int t = aiTextureType_NONE; t <= aiTextureType_UNKNOWN; t++)
             {
@@ -394,8 +398,6 @@ Model::Model(const std::string &path)
 
             if (!data.hasSpecular)
                 storeMaterialTexture(material, aiTextureType_SPECULAR, directory, data.specularPath, data.hasSpecular, "specular/map_Ks");
-
-            
         }
 
         for (unsigned int i = 0; i < mesh->mNumFaces; i++)
