@@ -421,7 +421,7 @@ void checkCollision()
         if (obs.type == SPEED_BUMP)
         {
             const float bumpHalfX = 1.5f;
-            const float bumpHalfZ = 3.0f;
+            const float bumpHalfZ = 2.0f;
             const float bumpH = 0.6f;
 
             if (distX < bumpHalfX && distZ < bumpHalfZ && pbY < bumpH)

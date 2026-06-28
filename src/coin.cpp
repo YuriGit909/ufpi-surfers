@@ -167,6 +167,9 @@ void drawCoins()
 void checkCoinCollision()
 {
     float playerX = getPlayerX();
+    float playerY = getPlayerY();
+    float playerTop    = isRolling() ? 0.55f : playerY + 0.5f;
+    float playerBottom = isRolling() ? 0.05f : playerY - 0.5f;
 
     for (auto &c : coins)
     {
@@ -176,7 +179,9 @@ void checkCoinCollision()
         float distanceX = fabs(playerX - c.x);
         float distanceZ = fabs(2.0f - c.z);
 
-        if (distanceX < 1.0f && distanceZ < 1.0f)
+        bool hitY = c.y >= playerBottom && c.y <= playerTop;
+
+        if (distanceX < 1.0f && distanceZ < 1.0f && hitY)
         {
             c.active = false;
             ruCoins++;

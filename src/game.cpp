@@ -198,9 +198,8 @@ void drawGame()
     drawCoins();
     drawPlayer();
     drawShieldFlash();
+    drawPowerUpHUD(1000, 800);
     
-
-    // UI 2D
     if (isDoublePointsActive())
     {
         glColor3f(1.0f, 0.8f, 0.0f);

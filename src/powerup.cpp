@@ -12,7 +12,7 @@
 
 bool finalExamActive = false;
 int finalExamTimer = 0;
-const int FINAL_EXAM_DURATION = 60 * 60; // 1 minuto em 60 FPS
+const int FINAL_EXAM_DURATION = 60 * 15; // 1 minuto em 60 FPS
 static int   shieldFlashTimer    = 0;
 static const int SHIELD_FLASH_DURATION = 60;   // ~1 s a 60 FPS
 static int   shieldFlashPhase    = 0;           
@@ -130,7 +130,6 @@ int doublePointsTimer = 0;
 
 const int DOUBLE_POINTS_DURATION = 600;
 
-// desenha um quad texturizado (ou colorido) + borda pulsante no canto
 static void drawHUDIcon(float screenX, float screenY, float size,
                         GLuint tex,
                         float borderR, float borderG, float borderB,
@@ -181,7 +180,6 @@ void drawPowerUpHUD(int screenW, int screenH)
     hudPulse += 0.08f;
     if (hudPulse > 6.2832f) hudPulse = 0.0f;
 
-    // entra em modo 2D
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -196,66 +194,84 @@ void drawPowerUpHUD(int screenW, int screenH)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    const float SIZE   = 56.0f;
-    const float MARGIN = 16.0f;
-    float slot = 0;   // empilha ícones verticalmente
+    const float SIZE    = 56.0f;
+    const float MARGIN  = 16.0f;
+    const float BAR_H   = 8.0f;   // altura da barra
+    const float BAR_GAP = 4.0f;   // espaço entre ícone e barra
+    const float SLOT_H  = SIZE + BAR_GAP + BAR_H + 8.0f; // altura total de cada slot
+    float slot = 0;
 
-    // -- Prova Final --
+    // Lambda: desenha ícone + barra de duração
+    auto drawSlot = [&](GLuint tex,
+                        float bR, float bG, float bB,
+                        float progress,       // 0.0 a 1.0
+                        float barR, float barG, float barB)
+    {
+        float iconX = screenW - SIZE - MARGIN;
+        float iconY = screenH - SIZE - MARGIN - slot * SLOT_H;
+
+        // Ícone com borda
+        drawHUDIcon(iconX, iconY, SIZE, tex, bR, bG, bB, hudPulse);
+
+        // Fundo da barra (cinza escuro)
+        float barY = iconY - BAR_GAP - BAR_H;
+        glColor4f(0.2f, 0.2f, 0.2f, 0.8f);
+        glBegin(GL_QUADS);
+            glVertex2f(iconX,          barY);
+            glVertex2f(iconX + SIZE,   barY);
+            glVertex2f(iconX + SIZE,   barY + BAR_H);
+            glVertex2f(iconX,          barY + BAR_H);
+        glEnd();
+
+        // Preenchimento da barra
+        float fillW = SIZE * progress;
+        // pisca vermelho nos últimos 10%
+        if (progress < 0.1f) {
+            float flicker = sinf(hudPulse * 6.0f) > 0 ? 1.0f : 0.4f;
+            glColor4f(1.0f, 0.1f, 0.1f, flicker);
+        } else {
+            glColor4f(barR, barG, barB, 1.0f);
+        }
+        glBegin(GL_QUADS);
+            glVertex2f(iconX,          barY);
+            glVertex2f(iconX + fillW,  barY);
+            glVertex2f(iconX + fillW,  barY + BAR_H);
+            glVertex2f(iconX,          barY + BAR_H);
+        glEnd();
+
+        slot++;
+    };
+
     if (finalExamActive)
     {
-        float timeLeft = (float)finalExamTimer / FINAL_EXAM_DURATION;
+        float progress = (float)finalExamTimer / FINAL_EXAM_DURATION;
         bool  lastTen  = finalExamTimer < 60 * 10;
 
         float bR, bG, bB;
-        if (lastTen)
-        {
-            // pisca vermelho rápido nos últimos 10s
-            float fastPulse = sinf(hudPulse * 3.0f);
-            bR = 1.0f;
-            bG = 0.1f * (0.5f + 0.5f * fastPulse);
-            bB = 0.0f;
-        }
-        else
-        {
-            // dourado pulsante
-            bR = 1.0f;
-            bG = 0.75f + 0.15f * sinf(hudPulse);
-            bB = 0.0f;
+        if (lastTen) {
+            float p = sinf(hudPulse * 3.0f);
+            bR = 1.0f; bG = 0.1f * (0.5f + 0.5f * p); bB = 0.0f;
+        } else {
+            bR = 1.0f; bG = 0.75f + 0.15f * sinf(hudPulse); bB = 0.0f;
         }
 
-        float iconX = screenW - SIZE - MARGIN;
-        float iconY = screenH - SIZE - MARGIN - slot * (SIZE + 8.0f);
-
-        drawHUDIcon(iconX, iconY, SIZE, finalExamTexture, bR, bG, bB, hudPulse);
-        slot++;
+        drawSlot(finalExamTexture, bR, bG, bB, progress, 1.0f, 0.8f, 0.0f);
     }
 
-    // -- Manga (x2 pontos) --
     if (doublePointsActive)
     {
-        bool lastTen = doublePointsTimer < 60 * 10;
+        float progress = (float)doublePointsTimer / DOUBLE_POINTS_DURATION;
+        bool  lastTen  = doublePointsTimer < 60 * 10;
 
         float bR, bG, bB;
-        if (lastTen)
-        {
-            float fastPulse = sinf(hudPulse * 3.0f);
-            bR = 1.0f;
-            bG = 0.1f * (0.5f + 0.5f * fastPulse);
-            bB = 0.0f;
-        }
-        else
-        {
-            // verde pulsante
-            bR = 0.2f + 0.1f * sinf(hudPulse);
-            bG = 0.9f;
-            bB = 0.2f;
+        if (lastTen) {
+            float p = sinf(hudPulse * 3.0f);
+            bR = 1.0f; bG = 0.1f * (0.5f + 0.5f * p); bB = 0.0f;
+        } else {
+            bR = 0.2f + 0.1f * sinf(hudPulse); bG = 0.9f; bB = 0.2f;
         }
 
-        float iconX = screenW - SIZE - MARGIN;
-        float iconY = screenH - SIZE - MARGIN - slot * (SIZE + 8.0f);
-
-        drawHUDIcon(iconX, iconY, SIZE, mangaHudTexture, bR, bG, bB, hudPulse);
-        slot++;
+        drawSlot(mangaHudTexture, bR, bG, bB, progress, 0.2f, 0.9f, 0.2f);
     }
 
     glDisable(GL_BLEND);
