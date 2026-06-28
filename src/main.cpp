@@ -8,6 +8,7 @@
 #include "menu.h"
 #include "game.h"
 #include "powerup.h"
+#include "player.h"
 #include "obstacle.h"
 #include <ctime>
 #include <cstdlib>
@@ -140,6 +141,7 @@ int main(int argc, char** argv) {
     playMusic();
 
     atexit(stopAudio);
+      initPlayerModel();
     initObstacleModels();
     initPowerUpModels();
     initGameModels();

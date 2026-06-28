@@ -120,10 +120,10 @@ void clearNearbyObstacles(float z)
 void createObstacleAt(float x, float z, ObstacleType type)
 {
     Obstacle obs;
-    obs.x        = x;
-    obs.z        = z;
-    obs.type     = type;
-    obs.moving   = false;
+    obs.x = x;
+    obs.z = z;
+    obs.type = type;
+    obs.moving = false;
     obs.ownSpeed = 0.0f;
 
     if (type == BUS)
@@ -150,7 +150,7 @@ static float obstacleSpacing(float speed)
 
 bool hasObstacleNear(float x, float z, float radiusX, float radiusZ)
 {
-    for (auto& obs : obstacles)
+    for (auto &obs : obstacles)
     {
         if (obs.type == BUS)
         {
@@ -321,7 +321,8 @@ void updateObstacles(float speed, float score)
 
         obstacles.erase(
             remove_if(obstacles.begin(), obstacles.end(),
-                      [](const Obstacle &o) { return o.z > 15.0f; }),
+                      [](const Obstacle &o)
+                      { return o.z > 15.0f; }),
             obstacles.end());
 
         float farthestZ = -200.0f;
@@ -348,7 +349,8 @@ void updateObstacles(float speed, float score)
         if (obs.z > 15.0f)
         {
             int lane = rand() % 3;
-            obs.x = lane == 0 ? -7.0f : lane == 1 ? 0.0f : 7.0f;
+            obs.x = lane == 0 ? -7.0f : lane == 1 ? 0.0f
+                                                  : 7.0f;
             obs.z = nextRecycleZ;
             nextRecycleZ -= spacing;
 
@@ -358,9 +360,9 @@ void updateObstacles(float speed, float score)
             int newKind = rand() % 3;
             if (newKind == 0)
             {
-                obs.type     = BUS;
-                obs.busType  = randomBusType();
-                obs.moving   = (rand() % 100 < 10);
+                obs.type = BUS;
+                obs.busType = randomBusType();
+                obs.moving = (rand() % 100 < 10);
                 obs.ownSpeed = obs.moving ? 0.35f : 0.0f;
             }
             else if (newKind == 1)
@@ -394,17 +396,25 @@ void checkCollision()
         {
             HitBox hb = getBusHitBox(obs.busType);
 
-            if (distX < hb.hitX && distZ < hb.hitZ && ptY < hb.hitH)
+            if (distX < hb.hitX && distZ < hb.hitZ)
             {
-                if (isFinalExamActive())
+                float playerBase = isRolling() ? 0.05f : playerBottomY();
+                float playerTop = playerEffectiveTopY();
+
+                bool jumpedOver = playerBase >= hb.hitH;
+
+                if (!jumpedOver)
                 {
-                    consumeFinalExam();
-                    clearNearbyObstacles(obs.z);
+                        if (isFinalExamActive())
+                    {
+                        consumeFinalExam();
+                        triggerShieldFlash();
+                        clearNearbyObstacles(obs.z);
+                        return;
+                    }
+                    gameOver = true;
                     return;
                 }
-
-                gameOver = true;
-                return;
             }
         }
 
@@ -417,8 +427,9 @@ void checkCollision()
             if (distX < bumpHalfX && distZ < bumpHalfZ && pbY < bumpH)
             {
                 if (isFinalExamActive())
-                {   
+                {
                     consumeFinalExam();
+                    triggerShieldFlash();
                     clearNearbyObstacles(obs.z);
                     return;
                 }
@@ -444,6 +455,7 @@ void checkCollision()
                     if (isFinalExamActive())
                     {
                         consumeFinalExam();
+                        triggerShieldFlash();
                         clearNearbyObstacles(obs.z);
                         return;
                     }

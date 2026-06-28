@@ -11,5 +11,8 @@ float getPlayerX();
 float getPlayerY();
 void roll();
 bool isRolling();
+void initPlayerModel();
+void playHitSideAnimation();
+void playHitFrontAnimation();
 
 #endif

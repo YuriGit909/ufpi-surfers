@@ -1,5 +1,27 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include "player.h"
+#include "animated_model.h"
+#include "animation.h"
+#include "animator.h"
+
+static AnimatedModel *character = nullptr;
+static Animation *runAnimation = nullptr;
+static Animation *jumpAnimation = nullptr;
+static Animation *rollAnimation = nullptr;
+static Animator *animator = nullptr;
+
+void initPlayerModel()
+{
+    character = new AnimatedModel("./assets/player/estudante.glb");
+
+    runAnimation = new Animation("./assets/player/estudante.glb", character, 6);
+    jumpAnimation = new Animation("./assets/player/estudante.glb", character, 0);
+    rollAnimation = new Animation("./assets/player/estudante.glb", character, 1);
+
+    animator = new Animator(runAnimation);
+    animator->playAnimation(runAnimation, true);
+}
 
 float lanes[3] = {-7.0f, 0.0f, 7.0f};
 int currentLane = 1;
@@ -9,11 +31,11 @@ float velocityY = 0.0f;
 bool jumping = false;
 
 const float gravity = -0.06f;
-const float jumpForce = 0.75f;
+const float jumpForce = 0.60f;
 bool rolling = false;
 int rollTimer = 0;
 
-const int ROLL_DURATION = 10; // ~0,5s
+const int ROLL_DURATION = 35; // ~0,5s
 
 void drawPlayer()
 {
@@ -21,27 +43,44 @@ void drawPlayer()
 
     glTranslatef(
         lanes[currentLane],
-        isRolling() ? 0.3f : playerY,
+        (isRolling() ? 0.3f : playerY) + 0.6f,
         2.0f);
 
-    glColor3f(0.0f, 0.0f, 1.0f);
+    glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
 
-    if (isRolling())
+    if (character)
     {
-        glScalef(1.4f, 0.5f, 1.0f);
-    }
+        glScalef(0.1f, 0.1f, 0.1f);
 
-    glutSolidCube(1.0f);
+        if (animator)
+            character->draw(animator->getFinalBoneMatrices());
+        else
+            character->draw();
+    }
+    else
+    {
+        if (isRolling())
+            glScalef(1.4f, 0.5f, 1.0f);
+
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glutSolidCube(1.0f);
+    }
 
     glPopMatrix();
 }
 
 void roll()
 {
-    if (!rolling)
+    if (!rolling && !jumping)
     {
         rolling = true;
         rollTimer = ROLL_DURATION;
+
+        if (animator && rollAnimation)
+        {
+            animator->setSpeed(2.5f);
+            animator->playAnimation(rollAnimation, false);
+        }
     }
 }
 
@@ -52,19 +91,23 @@ bool isRolling()
 
 void jump()
 {
-    if (!jumping)
+    if (!jumping && !rolling)
     {
         velocityY = jumpForce;
         jumping = true;
+
+        if (animator && jumpAnimation)
+        {
+            animator->setSpeed(1.5f);
+            animator->playAnimation(jumpAnimation, false);
+        }
     }
 }
 
 void updatePlayer()
 {
-
     if (jumping)
     {
-
         velocityY += gravity;
         playerY += velocityY;
 
@@ -73,6 +116,12 @@ void updatePlayer()
             playerY = 1.0f;
             velocityY = 0.0f;
             jumping = false;
+
+            if (animator && runAnimation)
+            {
+                animator->setSpeed(1.0f);
+                animator->playAnimation(runAnimation, true);
+            }
         }
     }
 
@@ -83,8 +132,17 @@ void updatePlayer()
         if (rollTimer <= 0)
         {
             rolling = false;
+
+            if (animator && runAnimation)
+            {
+                animator->setSpeed(1.0f);
+                animator->playAnimation(runAnimation, true);
+            }
         }
     }
+
+    if (animator)
+        animator->updateAnimation(0.016f);
 }
 
 void movePlayerLeft()

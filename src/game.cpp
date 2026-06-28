@@ -197,6 +197,8 @@ void drawGame()
     drawPowerUps();
     drawCoins();
     drawPlayer();
+    drawShieldFlash();
+    
 
     // UI 2D
     if (isDoublePointsActive())

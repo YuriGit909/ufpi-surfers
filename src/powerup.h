@@ -11,4 +11,8 @@ void initPowerUpModels();
 bool isFinalExamActive();
 void activateFinalExam();
 void consumeFinalExam();
+void triggerShieldFlash();
+void drawShieldFlash();   
+extern GLuint mangaHudTexture;
+void drawPowerUpHUD(int screenW, int screenH);     
 #endif

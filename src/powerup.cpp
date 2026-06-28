@@ -13,14 +13,73 @@
 bool finalExamActive = false;
 int finalExamTimer = 0;
 const int FINAL_EXAM_DURATION = 60 * 60; // 1 minuto em 60 FPS
-
-
+static int   shieldFlashTimer    = 0;
+static const int SHIELD_FLASH_DURATION = 60;   // ~1 s a 60 FPS
+static int   shieldFlashPhase    = 0;           
+static float hudPulse = 0.0f;   
+GLuint mangaHudTexture = 0;     
 bool finalExamCollectedOnce = false;
 
 GLuint finalExamTexture = 0;
 Model *mangaModel = nullptr;
 
 using namespace std;
+
+
+void triggerShieldFlash()
+{
+    shieldFlashTimer = SHIELD_FLASH_DURATION;
+    shieldFlashPhase = 0;
+}
+
+void drawShieldFlash()
+{
+    if (shieldFlashTimer <= 0) return;
+
+    // alterna branco/vermelho a cada 10 frames → 3 piscadas em 1 s
+    int segment = (SHIELD_FLASH_DURATION - shieldFlashTimer) / 10;
+    shieldFlashPhase = segment % 2;
+
+    float alpha = (float)shieldFlashTimer / SHIELD_FLASH_DURATION * 0.55f;
+
+    // salva projeção e entra em modo 2-D
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 1, 0, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (shieldFlashPhase == 0)
+        glColor4f(1.0f, 1.0f, 1.0f, alpha);   // branco
+    else
+        glColor4f(1.0f, 0.1f, 0.1f, alpha);   // vermelho
+
+    glBegin(GL_QUADS);
+        glVertex2f(0, 0);
+        glVertex2f(1, 0);
+        glVertex2f(1, 1);
+        glVertex2f(0, 1);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    shieldFlashTimer--;
+}
 
 void activateFinalExam()
 {
@@ -44,6 +103,7 @@ void initPowerUpModels()
 {
     mangaModel = new Model("./assets/models/manga.obj");
     finalExamTexture = loadMenuTexture("./assets/textures/prova-final.png");
+    mangaHudTexture = loadMenuTexture("./assets/textures/manga.png"); 
 }
 
 enum PowerType
@@ -69,6 +129,144 @@ bool doublePointsActive = false;
 int doublePointsTimer = 0;
 
 const int DOUBLE_POINTS_DURATION = 600;
+
+// desenha um quad texturizado (ou colorido) + borda pulsante no canto
+static void drawHUDIcon(float screenX, float screenY, float size,
+                        GLuint tex,
+                        float borderR, float borderG, float borderB,
+                        float pulse)
+{
+    float border = 3.0f + 2.0f * sinf(pulse);   // 1..5 px pulsante
+
+    // -- borda --
+    glColor4f(borderR, borderG, borderB, 0.9f);
+    glBegin(GL_QUADS);
+        glVertex2f(screenX - border,        screenY - border);
+        glVertex2f(screenX + size + border, screenY - border);
+        glVertex2f(screenX + size + border, screenY + size + border);
+        glVertex2f(screenX - border,        screenY + size + border);
+    glEnd();
+
+    // -- ícone --
+    if (tex)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glColor4f(1, 1, 1, 1);
+        glBegin(GL_QUADS);
+            glTexCoord2f(0,1); glVertex2f(screenX,        screenY);
+            glTexCoord2f(1,1); glVertex2f(screenX + size, screenY);
+            glTexCoord2f(1,0); glVertex2f(screenX + size, screenY + size);
+            glTexCoord2f(0,0); glVertex2f(screenX,        screenY + size);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+    else
+    {
+        // fallback colorido (manga sem textura 2D)
+        glColor4f(1.0f, 0.55f, 0.0f, 1.0f);   // laranja
+        glBegin(GL_QUADS);
+            glVertex2f(screenX,        screenY);
+            glVertex2f(screenX + size, screenY);
+            glVertex2f(screenX + size, screenY + size);
+            glVertex2f(screenX,        screenY + size);
+        glEnd();
+    }
+}
+
+void drawPowerUpHUD(int screenW, int screenH)
+{
+    if (!finalExamActive && !doublePointsActive) return;
+
+    hudPulse += 0.08f;
+    if (hudPulse > 6.2832f) hudPulse = 0.0f;
+
+    // entra em modo 2D
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, screenW, 0, screenH);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    const float SIZE   = 56.0f;
+    const float MARGIN = 16.0f;
+    float slot = 0;   // empilha ícones verticalmente
+
+    // -- Prova Final --
+    if (finalExamActive)
+    {
+        float timeLeft = (float)finalExamTimer / FINAL_EXAM_DURATION;
+        bool  lastTen  = finalExamTimer < 60 * 10;
+
+        float bR, bG, bB;
+        if (lastTen)
+        {
+            // pisca vermelho rápido nos últimos 10s
+            float fastPulse = sinf(hudPulse * 3.0f);
+            bR = 1.0f;
+            bG = 0.1f * (0.5f + 0.5f * fastPulse);
+            bB = 0.0f;
+        }
+        else
+        {
+            // dourado pulsante
+            bR = 1.0f;
+            bG = 0.75f + 0.15f * sinf(hudPulse);
+            bB = 0.0f;
+        }
+
+        float iconX = screenW - SIZE - MARGIN;
+        float iconY = screenH - SIZE - MARGIN - slot * (SIZE + 8.0f);
+
+        drawHUDIcon(iconX, iconY, SIZE, finalExamTexture, bR, bG, bB, hudPulse);
+        slot++;
+    }
+
+    // -- Manga (x2 pontos) --
+    if (doublePointsActive)
+    {
+        bool lastTen = doublePointsTimer < 60 * 10;
+
+        float bR, bG, bB;
+        if (lastTen)
+        {
+            float fastPulse = sinf(hudPulse * 3.0f);
+            bR = 1.0f;
+            bG = 0.1f * (0.5f + 0.5f * fastPulse);
+            bB = 0.0f;
+        }
+        else
+        {
+            // verde pulsante
+            bR = 0.2f + 0.1f * sinf(hudPulse);
+            bG = 0.9f;
+            bB = 0.2f;
+        }
+
+        float iconX = screenW - SIZE - MARGIN;
+        float iconY = screenH - SIZE - MARGIN - slot * (SIZE + 8.0f);
+
+        drawHUDIcon(iconX, iconY, SIZE, mangaHudTexture, bR, bG, bB, hudPulse);
+        slot++;
+    }
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
 
 void drawPowerUps()
 {

@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <sstream>
+#include <glm/glm.hpp>
 
 #include "model.h"
 #include "shader.h"
@@ -34,6 +35,31 @@ using namespace std;
 
 static Shader modelShader;
 static bool shaderTriedToLoad = false;
+
+glm::mat4 convertAssimpMatrixToGLM(const aiMatrix4x4& from)
+{
+    glm::mat4 to;
+
+    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+
+    return to;
+}
+
+void setVertexBoneData(Vertex& vertex, int boneID, float weight)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (vertex.boneIDs[i] < 0)
+        {
+            vertex.boneIDs[i] = boneID;
+            vertex.weights[i] = weight;
+            return;
+        }
+    }
+}
 
 string getDirectory(const string &path)
 {
@@ -321,9 +347,10 @@ Model::Model(const std::string &path)
     const aiScene *scene = importer.ReadFile(
         path,
         aiProcess_Triangulate |
-            aiProcess_FlipUVs |
-            aiProcess_GenSmoothNormals |
-            aiProcess_CalcTangentSpace);
+        aiProcess_FlipUVs |
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace
+    );
 
     if (!scene || !scene->HasMeshes())
     {
@@ -340,6 +367,7 @@ Model::Model(const std::string &path)
         aiMesh *mesh = scene->mMeshes[m];
 
         MeshData data;
+        vector<Vertex> tempVertices(mesh->mNumVertices);
 
         if (scene->HasMaterials())
         {
@@ -361,19 +389,11 @@ Model::Model(const std::string &path)
             if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
                 data.opacity = opacity;
 
-            for (int t = aiTextureType_NONE; t <= aiTextureType_UNKNOWN; t++)
-            {
-                unsigned int n = material->GetTextureCount((aiTextureType)t);
-
-            }
-
-            // GLB / glTF - PBR
             storeMaterialTexture(material, aiTextureType_BASE_COLOR, directory, data.diffusePath, data.hasDiffuse, "baseColor");
             storeMaterialTexture(material, aiTextureType_NORMAL_CAMERA, directory, data.normalPath, data.hasNormal, "normal");
             storeMaterialTexture(material, aiTextureType_METALNESS, directory, data.specularPath, data.hasSpecular, "metallic");
             storeMaterialTexture(material, aiTextureType_DIFFUSE_ROUGHNESS, directory, data.roughnessPath, data.hasRoughness, "roughness");
 
-            // OBJ / MTL - compatibilidade antiga
             if (!data.hasDiffuse)
                 storeMaterialTexture(material, aiTextureType_DIFFUSE, directory, data.diffusePath, data.hasDiffuse, "diffuse/map_Kd");
 
@@ -387,6 +407,101 @@ Model::Model(const std::string &path)
                 storeMaterialTexture(material, aiTextureType_SPECULAR, directory, data.specularPath, data.hasSpecular, "specular/map_Ks");
         }
 
+        for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+        {
+            Vertex vertex;
+
+            aiVector3D pos = mesh->mVertices[i];
+
+            vertex.x = pos.x;
+            vertex.y = pos.y;
+            vertex.z = pos.z;
+
+            if (mesh->HasNormals())
+            {
+                aiVector3D normal = mesh->mNormals[i];
+                vertex.nx = normal.x;
+                vertex.ny = normal.y;
+                vertex.nz = normal.z;
+            }
+            else
+            {
+                vertex.nx = 0.0f;
+                vertex.ny = 1.0f;
+                vertex.nz = 0.0f;
+            }
+
+            int uvChannel = 0;
+
+            if (data.materialName.find("Bark") != string::npos ||
+                data.materialName.find("Leaf") != string::npos)
+            {
+                if (mesh->HasTextureCoords(1))
+                    uvChannel = 1;
+            }
+
+            if (mesh->HasTextureCoords(uvChannel))
+            {
+                aiVector3D tex = mesh->mTextureCoords[uvChannel][i];
+                vertex.u = tex.x;
+                vertex.v = tex.y;
+            }
+            else
+            {
+                vertex.u = 0.0f;
+                vertex.v = 0.0f;
+            }
+
+            if (mesh->HasTangentsAndBitangents())
+            {
+                aiVector3D tangent = mesh->mTangents[i];
+                vertex.tx = tangent.x;
+                vertex.ty = tangent.y;
+                vertex.tz = tangent.z;
+            }
+            else
+            {
+                vertex.tx = 1.0f;
+                vertex.ty = 0.0f;
+                vertex.tz = 0.0f;
+            }
+
+            tempVertices[i] = vertex;
+        }
+
+        for (unsigned int boneIndex = 0; boneIndex < mesh->mNumBones; boneIndex++)
+        {
+            string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+
+            int boneID = -1;
+
+            if (boneInfoMap.find(boneName) == boneInfoMap.end())
+            {
+                BoneInfo newBoneInfo;
+                newBoneInfo.id = boneCounter;
+                newBoneInfo.offset = convertAssimpMatrixToGLM(mesh->mBones[boneIndex]->mOffsetMatrix);
+
+                boneInfoMap[boneName] = newBoneInfo;
+                boneID = boneCounter;
+                boneCounter++;
+            }
+            else
+            {
+                boneID = boneInfoMap[boneName].id;
+            }
+
+            aiBone *bone = mesh->mBones[boneIndex];
+
+            for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; weightIndex++)
+            {
+                int vertexID = bone->mWeights[weightIndex].mVertexId;
+                float weight = bone->mWeights[weightIndex].mWeight;
+
+                if (vertexID >= 0 && vertexID < (int)tempVertices.size())
+                    setVertexBoneData(tempVertices[vertexID], boneID, weight);
+            }
+        }
+
         for (unsigned int i = 0; i < mesh->mNumFaces; i++)
         {
             aiFace face = mesh->mFaces[i];
@@ -394,63 +509,15 @@ Model::Model(const std::string &path)
             for (unsigned int j = 0; j < face.mNumIndices; j++)
             {
                 unsigned int index = face.mIndices[j];
-
-                aiVector3D pos = mesh->mVertices[index];
-
-                float nx = 0.0f;
-                float ny = 1.0f;
-                float nz = 0.0f;
-
-                if (mesh->HasNormals())
-                {
-                    aiVector3D normal = mesh->mNormals[index];
-                    nx = normal.x;
-                    ny = normal.y;
-                    nz = normal.z;
-                }
-
-                float u = 0.0f;
-                float v = 0.0f;
-
-                int uvChannel = 0;
-
-                if (data.materialName.find("Bark") != string::npos ||
-                    data.materialName.find("Leaf") != string::npos)
-                {
-                    if (mesh->HasTextureCoords(1))
-                        uvChannel = 1;
-                }
-
-                if (mesh->HasTextureCoords(uvChannel))
-                {
-                    aiVector3D tex = mesh->mTextureCoords[uvChannel][index];
-                    u = tex.x;
-                    v = tex.y;
-                }
-
-                
-
-                float tx = 1.0f;
-                float ty = 0.0f;
-                float tz = 0.0f;
-
-                if (mesh->HasTangentsAndBitangents())
-                {
-                    aiVector3D tangent = mesh->mTangents[index];
-                    tx = tangent.x;
-                    ty = tangent.y;
-                    tz = tangent.z;
-                }
-
-                data.vertices.push_back({pos.x, pos.y, pos.z,
-                                         nx, ny, nz,
-                                         u, v,
-                                         tx, ty, tz});
+                data.vertices.push_back(tempVertices[index]);
             }
         }
 
         meshes.push_back(data);
     }
+
+    cout << "Modelo carregado: " << path << endl;
+    cout << "Bones encontrados: " << boneCounter << endl;
 }
 
 void Model::draw()
