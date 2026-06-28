@@ -11,6 +11,7 @@
 #include "obstacle.h"
 #include <cstdio>
 #include "model.h"
+#include "menu.h"
 
 using namespace std;
 
@@ -166,15 +167,38 @@ void drawStreet()
 
 void drawGame()
 {
+    drawSkyGradient();
+    drawSunRays();
+
+    // Nuvens em 2D no fundo
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, 1000, 0, 600);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+
+    float offset = cameraX * 8.0f;
+
+    drawCloud(20  - offset, 400, 180, 140);
+    drawCloud(760 - offset, 450, 220, 140);
+    drawCloud(330 - offset, 450, 140, 140);
+    drawCloud(560 - offset, 470, 120, 140);
+
+    glEnable(GL_DEPTH_TEST);
+
+    // Mundo 3D
     setupGameCamera();
 
-    // drawTrack();
     drawStreet();
     drawObstacles();
     drawPowerUps();
     drawCoins();
     drawPlayer();
 
+    // UI 2D
     if (isDoublePointsActive())
     {
         glColor3f(1.0f, 0.8f, 0.0f);
@@ -186,6 +210,7 @@ void drawGame()
         glColor3f(1.0f, 0.8f, 0.0f);
         drawText2D(360, 520, "CUIDADO! BATEU DE LADO");
     }
+
     char scoreText[50];
     sprintf(scoreText, "PONTOS: %d", int(score));
 
@@ -194,13 +219,13 @@ void drawGame()
 
     glColor3f(1.0f, 0.9f, 0.0f);
     drawText2D(40, 490, coinText);
+
     glColor3f(1.0f, 1.0f, 1.0f);
     drawText2D(40, 550, scoreText);
+
     if (gameOver)
     {
-
         glColor3f(1.0f, 0.0f, 0.0f);
-
         drawText2D(430, 330, "GAME OVER");
         drawText2D(350, 290, "PRESSIONE ENTER PARA REINICIAR");
     }
@@ -208,7 +233,6 @@ void drawGame()
     if (paused)
     {
         glColor3f(1.0f, 1.0f, 0.0f);
-
         drawText2D(470, 320, "PAUSADO");
         drawText2D(390, 280, "PRESSIONE P PARA CONTINUAR");
     }

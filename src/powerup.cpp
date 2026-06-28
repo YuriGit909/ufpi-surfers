@@ -8,21 +8,50 @@
 #include "powerup.h"
 #include "player.h"
 #include "model.h"
+#include "menu.h"
 
-Model* mangaModel = nullptr;
+bool finalExamActive = false;
+int finalExamTimer = 0;
+const int FINAL_EXAM_DURATION = 60 * 60; // 1 minuto em 60 FPS
+
+
+bool finalExamCollectedOnce = false;
+
+GLuint finalExamTexture = 0;
+Model *mangaModel = nullptr;
 
 using namespace std;
+
+void activateFinalExam()
+{
+    finalExamActive = true;
+    finalExamTimer = FINAL_EXAM_DURATION;
+    finalExamCollectedOnce = true;
+}
+
+bool isFinalExamActive()
+{
+    return finalExamActive;
+}
+
+void consumeFinalExam()
+{
+    finalExamActive = false;
+    finalExamTimer = 0;
+}
 
 void initPowerUpModels()
 {
     mangaModel = new Model("./assets/models/manga.obj");
+    finalExamTexture = loadMenuTexture("./assets/textures/prova-final.png");
 }
 
 enum PowerType
 {
     DOUBLE_POINTS,
     SPEED_BOOST,
-    INVINCIBILITY
+    INVINCIBILITY,
+    FINAL_EXAM
 };
 
 struct PowerUp
@@ -54,17 +83,51 @@ void drawPowerUps()
 
             glPushMatrix();
 
-glTranslatef(p.x, 1.2f, p.z);
+            glTranslatef(p.x, 1.2f, p.z);
 
-// ajuste depois conforme necessário
-glScalef(1.0f, 1.0f, 1.0f);
+            // ajuste depois conforme necessário
+            glScalef(1.0f, 1.0f, 1.0f);
 
-if (mangaModel)
-    mangaModel->draw();
+            if (mangaModel)
+                mangaModel->draw();
 
-glPopMatrix();
+            glPopMatrix();
 
             break;
+        case FINAL_EXAM:
+
+    glPushMatrix();
+
+    glTranslatef(p.x, 1.3f, p.z);
+
+    glDisable(GL_LIGHTING);
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindTexture(GL_TEXTURE_2D, finalExamTexture);
+    glColor4f(1,1,1,1);
+
+    glScalef(2.0f, 3.0f, 1.0f);
+
+
+    glBegin(GL_QUADS);
+
+        glTexCoord2f(0,1); glVertex3f(-0.5f,-0.5f,0);
+        glTexCoord2f(1,1); glVertex3f( 0.5f,-0.5f,0);
+        glTexCoord2f(1,0); glVertex3f( 0.5f, 0.5f,0);
+        glTexCoord2f(0,0); glVertex3f(-0.5f, 0.5f,0);
+
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+
+    break;
 
         default:
             break;
@@ -98,6 +161,11 @@ void checkPowerUps()
 
                 printf("Manga coletada! Pontos x2\n");
 
+                break;
+
+            case FINAL_EXAM:
+                activateFinalExam();
+                printf("Prova final coletada! Escudo ativo\n");
                 break;
 
             default:
@@ -137,9 +205,29 @@ void updatePowerUps(float speed)
             {
                 int lane = rand() % 3;
 
-                if (lane == 0) p.x = -7.0f;
-                if (lane == 1) p.x = 0.0f;
-                if (lane == 2) p.x = 7.0f;
+                if (lane == 0)
+                    p.x = -7.0f;
+                if (lane == 1)
+                    p.x = 0.0f;
+                if (lane == 2)
+                    p.x = 7.0f;
+
+                int r = rand() % 100;
+
+                if (!finalExamCollectedOnce)
+                {
+                    if (r < 100)
+                        p.type = FINAL_EXAM;
+                    else
+                        p.type = DOUBLE_POINTS;
+                }
+                else
+                {
+                    if (r < 5)
+                        p.type = FINAL_EXAM;
+                    else
+                        p.type = DOUBLE_POINTS;
+                }
 
                 p.z = -250.0f;
                 p.active = true;
@@ -154,6 +242,17 @@ void updatePowerUps(float speed)
         {
             p.active = false;
             p.respawnTimer = 1200;
+        }
+    }
+
+    if (finalExamActive)
+    {
+        finalExamTimer--;
+
+        if (finalExamTimer <= 0)
+        {
+            finalExamActive = false;
+            finalExamTimer = 0;
         }
     }
 

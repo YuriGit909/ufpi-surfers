@@ -5,8 +5,11 @@
 #include <algorithm>
 #include "coin.h"
 #include "player.h"
-
+#include "obstacle.h"
+#include "menu.h"
 using namespace std;
+
+GLuint coinTexture = 0;
 
 struct Coin
 {
@@ -22,28 +25,47 @@ int ruCoins = 0;
 int nextCoinSpawnScore = 20; // primeira fileira vem depois de 150 pontos
 bool coinLineActive = false;
 
+void spawnCoinArcLow(float x, float z)
+{
+    const int quantidade = 6;
+
+    for (int i = 0; i < quantidade; i++)
+    {
+        Coin c;
+        c.x = x;
+        c.z = z - 4.0f + i * 1.6f;
+        c.y = 0.3f; // rasteiro, abaixo da barreira
+        c.active = true;
+        coins.push_back(c);
+    }
+}
+
 void spawnCoinLine()
 {
     coins.clear();
 
     int lane = rand() % 3;
+    float x = lane == 0 ? -7.0f : lane == 1 ? 0.0f
+                                            : 7.0f;
 
-    float x = 0.0f;
+    // Tenta outra faixa se tiver ônibus no caminho
+    for (int tentativa = 0; tentativa < 3; tentativa++)
+    {
+        if (!hasObstacleNear(x, -80.0f, 2.0f, 15.0f))
+            break;
 
-    if (lane == 0) x = -7.0f;
-    if (lane == 1) x = 0.0f;
-    if (lane == 2) x = 7.0f;
+        lane = (lane + 1) % 3;
+        x = lane == 0 ? -7.0f : lane == 1 ? 0.0f
+                                          : 7.0f;
+    }
 
     for (int i = 0; i < 6; i++)
     {
         Coin c;
-
         c.x = x;
         c.y = 1.0f;
         c.z = -80.0f - i * 3.0f;
-
         c.active = true;
-
         coins.push_back(c);
     }
 
@@ -52,6 +74,8 @@ void spawnCoinLine()
 
 void initCoins()
 {
+
+    coinTexture = loadMenuTexture("./assets/textures/ficha.png");
     coins.clear();
     ruCoins = 0;
     nextCoinSpawnScore = 20;
@@ -99,12 +123,12 @@ void updateCoins(float speed, float score)
     }
 
     coins.erase(
-    remove_if(coins.begin(), coins.end(),
-        [](Coin &c) {
-            return !c.active;
-        }),
-    coins.end()
-);
+        remove_if(coins.begin(), coins.end(),
+                  [](Coin &c)
+                  {
+                      return !c.active;
+                  }),
+        coins.end());
 }
 
 void drawCoins()
@@ -117,9 +141,25 @@ void drawCoins()
             continue;
 
         glPushMatrix();
-            glTranslatef(c.x, c.y, c.z);
-            glScalef(0.45f, 0.45f, 0.15f);
-            glutSolidSphere(1.0f, 8, 8);
+        glTranslatef(c.x, c.y, c.z);
+        glScalef(1.75, 1.5f, 1.5f);
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glBindTexture(GL_TEXTURE_2D, coinTexture);
+
+        glBegin(GL_QUADS);
+
+        glTexCoord2f(0, 1); glVertex3f(-0.5f, -0.5f, 0);
+        glTexCoord2f(1, 1); glVertex3f( 0.5f, -0.5f, 0);
+        glTexCoord2f(1, 0); glVertex3f( 0.5f,  0.5f, 0);
+        glTexCoord2f(0, 0); glVertex3f(-0.5f,  0.5f, 0);
+
+        glEnd();
+
+        glDisable(GL_BLEND);
+        glDisable(GL_TEXTURE_2D);
         glPopMatrix();
     }
 }

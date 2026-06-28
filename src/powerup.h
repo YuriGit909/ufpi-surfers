@@ -8,5 +8,7 @@ void checkPowerUps();
 
 bool isDoublePointsActive();
 void initPowerUpModels();
-
+bool isFinalExamActive();
+void activateFinalExam();
+void consumeFinalExam();
 #endif

@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
+
+#include "audio.h"
 #include <cstdlib>
 
 #include "menu.h"
@@ -133,6 +135,11 @@ int main(int argc, char** argv) {
     glutInitWindowSize(1000, 600);
     glutCreateWindow("UFPI Surfers");
     glewInit();
+    initMenu();
+    initAudio();
+    playMusic();
+
+    atexit(stopAudio);
     initObstacleModels();
     initPowerUpModels();
     initGameModels();
@@ -165,7 +172,7 @@ glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
 
 glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-    glClearColor(0.55f, 0.75f, 0.95f, 1.0f);
+    glClearColor(0.05f, 0.25f, 0.75f, 1.0f);
 
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);

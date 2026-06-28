@@ -9,9 +9,10 @@ void setupMenuCamera() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    gluLookAt(
-        -1, 3, 10,   // posição da câmera
-        -1, 3, 0,    // para onde olha
-        0, 1, 0     // eixo de cima
-    );
+gluLookAt(
+    -4.0f, 2.6f, 11.5f,
+    -4.0f, 1.7f, -2.0f,
+    0.0f, 1.0f, 0.0f
+);
+
 }

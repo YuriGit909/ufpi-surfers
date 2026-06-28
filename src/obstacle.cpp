@@ -8,14 +8,15 @@
 #include "coin.h"
 #include "obstacle.h"
 #include "player.h"
+#include "powerup.h"
 
 using namespace std;
 
-Model* speedBumpModel = nullptr;
+Model *speedBumpModel = nullptr;
 Model bus401("./assets/models/bus_401_.obj");
 Model bus365("./assets/models/bus_365.obj");
 Model fantasmao("./assets/models/fantasmao.obj");
-Model* lowBarrierModel = nullptr;
+Model *lowBarrierModel = nullptr;
 
 void initObstacleModels()
 {
@@ -23,8 +24,18 @@ void initObstacleModels()
     lowBarrierModel = new Model("./assets/models/barrier.glb");
 }
 
-enum ObstacleType { BUS, SPEED_BUMP, LOW_BARRIER };
-enum BusType      { BUS_401, BUS_365, BUS_FANTASMAO };
+enum ObstacleType
+{
+    BUS,
+    SPEED_BUMP,
+    LOW_BARRIER
+};
+enum BusType
+{
+    BUS_401,
+    BUS_365,
+    BUS_FANTASMAO
+};
 
 struct Obstacle
 {
@@ -37,37 +48,40 @@ struct Obstacle
 
 vector<Obstacle> obstacles;
 
-int   obstacleCount        = 5;
-int   nextObstacleIncrease = 5000;
-float nextRecycleZ         = -180.0f;
+int obstacleCount = 5;
+int nextObstacleIncrease = 5000;
+float nextRecycleZ = -180.0f;
 
 extern bool gameOver;
 extern bool sideHitWarning;
-extern int  sideHitTimer;
+extern int sideHitTimer;
 
-
-// -----------------------------------------------------------------
-struct HitBox { float hitX, hitZ, hitH; };
+struct HitBox
+{
+    float hitX, hitZ, hitH;
+};
 
 static HitBox getBusHitBox(BusType t)
 {
     switch (t)
     {
-        case BUS_401:      return {1.2f, 10.0f, 4.0f};
-        case BUS_365:      return {1.0f,  7.0f, 3.5f};
-        case BUS_FANTASMAO:return {1.0f,  8.0f, 3.5f};
+    case BUS_401:
+        return {1.2f, 10.0f, 4.0f};
+    case BUS_365:
+        return {1.0f, 7.0f, 3.5f};
+    case BUS_FANTASMAO:
+        return {1.0f, 8.0f, 3.5f};
     }
     return {1.0f, 7.0f, 3.5f};
 }
 
-
-static float playerTopY()    { return getPlayerY() + 0.5f; }
+static float playerTopY() { return getPlayerY() + 0.5f; }
 static float playerBottomY() { return getPlayerY() - 0.5f; }
-
 
 static float playerEffectiveTopY()
 {
-    if (isRolling()) return 0.3f + 0.25f; // 0.55
+    if (isRolling())
+        return 0.3f + 0.25f; // 0.55
     return playerTopY();
 }
 
@@ -75,21 +89,32 @@ static float playerEffectiveTopY()
 BusType randomBusType()
 {
     int r = rand() % 100;
-    if (r < 60) return BUS_401;
-    if (r < 90) return BUS_365;
+    if (r < 60)
+        return BUS_401;
+    if (r < 90)
+        return BUS_365;
     return BUS_FANTASMAO;
 }
 
 void createBusAt(float x, float z, bool moving)
 {
     Obstacle obs;
-    obs.x        = x;
-    obs.z        = z;
-    obs.type     = BUS;
-    obs.busType  = randomBusType();
-    obs.moving   = moving;
+    obs.x = x;
+    obs.z = z;
+    obs.type = BUS;
+    obs.busType = randomBusType();
+    obs.moving = moving;
     obs.ownSpeed = moving ? 0.35f : 0.0f;
     obstacles.push_back(obs);
+}
+
+void clearNearbyObstacles(float z)
+{
+    for (auto &obs : obstacles)
+    {
+        if (fabs(obs.z - z) < 8.0f)
+            obs.z = 100.0f;
+    }
 }
 
 void createObstacleAt(float x, float z, ObstacleType type)
@@ -107,6 +132,10 @@ void createObstacleAt(float x, float z, ObstacleType type)
     if (type == SPEED_BUMP && rand() % 100 < 40)
         spawnCoinArc(obs.x, obs.z);
 
+    // Moedas rasteiras embaixo da barreira
+    if (type == LOW_BARRIER && rand() % 100 < 70)
+        spawnCoinArcLow(obs.x, obs.z);
+
     obstacles.push_back(obs);
 }
 
@@ -119,12 +148,25 @@ static float obstacleSpacing(float speed)
     return fmaxf(80.0f, minGap);
 }
 
+bool hasObstacleNear(float x, float z, float radiusX, float radiusZ)
+{
+    for (auto& obs : obstacles)
+    {
+        if (obs.type == BUS)
+        {
+            if (fabs(x - obs.x) < radiusX && fabs(z - obs.z) < radiusZ)
+                return true;
+        }
+    }
+    return false;
+}
+
 void createObstacle(float z)
 {
     // 50% ônibus, 50% lombada
     int obstacleKind = rand() % 3;
 
-    int lane  = rand() % 3;
+    int lane = rand() % 3;
     float laneX[3] = {-7.0f, 0.0f, 7.0f};
 
     if (obstacleKind == 0)
@@ -148,7 +190,7 @@ void createObstacle(float z)
         else
         {
             createBusAt(-7.0f, z, rand() % 100 < 35);
-            createBusAt( 7.0f, z, rand() % 100 < 35);
+            createBusAt(7.0f, z, rand() % 100 < 35);
         }
     }
     else if (obstacleKind == 1)
@@ -177,15 +219,33 @@ void createObstacle(float z)
     }
     else
     {
-        createObstacleAt(laneX[lane], z, LOW_BARRIER);
+        int pattern = rand() % 3;
+
+        if (pattern == 0)
+        {
+            createObstacleAt(laneX[lane], z, LOW_BARRIER);
+        }
+
+        else if (pattern == 1)
+        {
+            int free = rand() % 3;
+            for (int i = 0; i < 3; i++)
+                if (i != free)
+                    createObstacleAt(laneX[i], z, LOW_BARRIER);
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+                createObstacleAt(laneX[i], z, LOW_BARRIER);
+        }
     }
 }
 
 void initObstacles()
 {
-    obstacleCount        = 5;
+    obstacleCount = 5;
     nextObstacleIncrease = 5000;
-    nextRecycleZ         = -180.0f;
+    nextRecycleZ = -180.0f;
     obstacles.clear();
 }
 
@@ -256,16 +316,28 @@ void updateObstacles(float speed, float score)
 
     if (score >= nextObstacleIncrease)
     {
-        obstacleCount        = (int)(obstacleCount * 1.2f);
+        obstacleCount = (int)(obstacleCount * 1.2f);
         nextObstacleIncrease *= 2;
-        obstacles.clear();
+
+        obstacles.erase(
+            remove_if(obstacles.begin(), obstacles.end(),
+                      [](const Obstacle &o) { return o.z > 15.0f; }),
+            obstacles.end());
+
+        float farthestZ = -200.0f;
+        for (auto &obs : obstacles)
+            farthestZ = fminf(farthestZ, obs.z);
+
         for (int i = 0; i < obstacleCount; i++)
-            createObstacle(-200.0f - i * spacing);
+            createObstacle(farthestZ - (i + 1) * spacing);
+
+        nextRecycleZ = farthestZ - obstacleCount * spacing;
 
         printf("Obstaculos: %d | Proximo aumento: %d\n",
                obstacleCount, nextObstacleIncrease);
     }
 
+    // ← esse bloco estava faltando
     for (auto &obs : obstacles)
     {
         obs.z += speed;
@@ -277,30 +349,41 @@ void updateObstacles(float speed, float score)
         {
             int lane = rand() % 3;
             obs.x = lane == 0 ? -7.0f : lane == 1 ? 0.0f : 7.0f;
-
             obs.z = nextRecycleZ;
             nextRecycleZ -= spacing;
 
             if (nextRecycleZ < -600.0f)
                 nextRecycleZ = -spacing * obstacleCount;
 
-            if (obs.type == BUS)
+            int newKind = rand() % 3;
+            if (newKind == 0)
             {
+                obs.type     = BUS;
                 obs.busType  = randomBusType();
                 obs.moving   = (rand() % 100 < 10);
                 obs.ownSpeed = obs.moving ? 0.35f : 0.0f;
             }
-            if (obs.type == SPEED_BUMP && rand() % 100 < 40)
-                spawnCoinArc(obs.x, obs.z);
+            else if (newKind == 1)
+            {
+                obs.type = SPEED_BUMP;
+                if (rand() % 100 < 40)
+                    spawnCoinArc(obs.x, obs.z);
+            }
+            else
+            {
+                obs.type = LOW_BARRIER;
+                if (rand() % 100 < 70)
+                    spawnCoinArcLow(obs.x, obs.z);
+            }
         }
     }
 }
 
 void checkCollision()
 {
-    float px  = getPlayerX();
-    float ptY = playerEffectiveTopY();   // topo do player
-    float pbY = isRolling() ? 0.05f : playerBottomY(); // base do player
+    float px = getPlayerX();
+    float ptY = playerEffectiveTopY();
+    float pbY = isRolling() ? 0.05f : playerBottomY();
 
     for (auto &obs : obstacles)
     {
@@ -311,20 +394,21 @@ void checkCollision()
         {
             HitBox hb = getBusHitBox(obs.busType);
 
-            if (distX < hb.hitX && distZ < hb.hitZ)
+            if (distX < hb.hitX && distZ < hb.hitZ && ptY < hb.hitH)
             {
-                // Colisão só ocorre se o player não passou por cima
-                // (topo do player abaixo da altura do ônibus
-                //  E base do player acima do chão = sempre true)
-                if (ptY < hb.hitH)
+                if (isFinalExamActive())
                 {
-                    gameOver = true;
+                    consumeFinalExam();
+                    clearNearbyObstacles(obs.z);
                     return;
                 }
+
+                gameOver = true;
+                return;
             }
         }
 
-            if (obs.type == SPEED_BUMP)
+        if (obs.type == SPEED_BUMP)
         {
             const float bumpHalfX = 1.5f;
             const float bumpHalfZ = 3.0f;
@@ -332,19 +416,38 @@ void checkCollision()
 
             if (distX < bumpHalfX && distZ < bumpHalfZ && pbY < bumpH)
             {
+                if (isFinalExamActive())
+                {   
+                    consumeFinalExam();
+                    clearNearbyObstacles(obs.z);
+                    return;
+                }
+
                 gameOver = true;
                 return;
             }
         }
+
         if (obs.type == LOW_BARRIER)
         {
             const float barrierHalfX = 2.0f;
             const float barrierHalfZ = 1.2f;
+            const float barrierTopY = 1.8f;
 
             if (distX < barrierHalfX && distZ < barrierHalfZ)
             {
-                if (!isRolling())
+                bool rolledUnder = isRolling();
+                bool jumpedOver = playerBottomY() >= barrierTopY;
+
+                if (!rolledUnder && !jumpedOver)
                 {
+                    if (isFinalExamActive())
+                    {
+                        consumeFinalExam();
+                        clearNearbyObstacles(obs.z);
+                        return;
+                    }
+
                     gameOver = true;
                     return;
                 }
@@ -373,7 +476,7 @@ bool canMoveToLane(float targetX)
                 else
                 {
                     sideHitWarning = true;
-                    sideHitTimer   = 0;
+                    sideHitTimer = 0;
                 }
                 return false;
             }

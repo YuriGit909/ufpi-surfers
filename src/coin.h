@@ -7,6 +7,7 @@ void drawCoins();
 void checkCoinCollision();
 
 void spawnCoinArc(float x, float z);
+void spawnCoinArcLow(float x, float z); // arco baixo 
 
 int getRuCoins();
 

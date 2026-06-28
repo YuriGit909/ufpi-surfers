@@ -157,7 +157,6 @@ GLuint loadTexture(const string &filename)
 
     stbi_image_free(data);
 
-    cout << "Textura carregada: " << filename << endl;
 
     return textureID;
 }
@@ -251,8 +250,6 @@ GLuint loadEmbeddedTexture(const aiScene *scene, const string &textureName)
 
     stbi_image_free(data);
 
-    cout << "Textura embedded carregada: " << textureName << endl;
-
     return textureID;
 }
 
@@ -276,7 +273,7 @@ void storeMaterialTexture(
         textureFile = texFile;
         hasTexture = true;
 
-        cout << "  " << label << " embedded: " << texFile << endl;
+
         return;
     }
 
@@ -287,7 +284,7 @@ void storeMaterialTexture(
     textureFile = fullPath;
     hasTexture = true;
 
-    cout << "  " << label << ": " << fullPath << endl;
+
 }
 
 void ensureTextureLoaded(
@@ -364,20 +361,10 @@ Model::Model(const std::string &path)
             if (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
                 data.opacity = opacity;
 
-            cout << "Material " << mesh->mMaterialIndex << " (" << data.materialName << ")" << endl;
-
-            cout << "  vertices: " << mesh->mNumVertices << endl;
-            cout << "  tem UV0: " << (mesh->HasTextureCoords(0) ? "SIM" : "NAO") << endl;
-            cout << "  tem UV1: " << (mesh->HasTextureCoords(1) ? "SIM" : "NAO") << endl;
-            cout << "  tem UV2: " << (mesh->HasTextureCoords(2) ? "SIM" : "NAO") << endl;
-            cout << "  tem UV3: " << (mesh->HasTextureCoords(3) ? "SIM" : "NAO") << endl;
-
             for (int t = aiTextureType_NONE; t <= aiTextureType_UNKNOWN; t++)
             {
                 unsigned int n = material->GetTextureCount((aiTextureType)t);
 
-                if (n > 0)
-                    cout << "Tipo " << t << " -> " << n << " textura(s)" << endl;
             }
 
             // GLB / glTF - PBR
@@ -441,12 +428,7 @@ Model::Model(const std::string &path)
                     v = tex.y;
                 }
 
-                if (index < 5 &&
-                    (data.materialName == "Bark.001" || data.materialName == "Leaf.001"))
-                {
-                    cout << data.materialName
-                        << " UV = " << u << ", " << v << endl;
-                }
+                
 
                 float tx = 1.0f;
                 float ty = 0.0f;
@@ -469,8 +451,6 @@ Model::Model(const std::string &path)
 
         meshes.push_back(data);
     }
-
-    cout << "Modelo carregado com materiais, texturas multiplas e tangentes: " << path << endl;
 }
 
 void Model::draw()
@@ -528,9 +508,6 @@ void Model::draw()
         {
             if (mesh.hasDiffuse)
             {
-                cout << "Desenhando com textura: " << mesh.materialName
-                     << " -> " << mesh.diffusePath
-                     << " id=" << mesh.diffuseMap << endl;
 
                 glEnable(GL_TEXTURE_2D);
                 glBindTexture(GL_TEXTURE_2D, mesh.diffuseMap);
