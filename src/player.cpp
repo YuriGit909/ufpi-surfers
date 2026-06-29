@@ -4,6 +4,7 @@
 #include "animated_model.h"
 #include "animation.h"
 #include "animator.h"
+#include "obstacle.h"
 
 static AnimatedModel *character = nullptr;
 static Animation *runAnimation = nullptr;
@@ -71,6 +72,8 @@ void drawPlayer()
 
 void roll()
 {
+
+    profileRegisterRoll();
     if (!rolling && !jumping)
     {
         rolling = true;
@@ -91,6 +94,7 @@ bool isRolling()
 
 void jump()
 {
+    profileRegisterJump();
     if (!jumping && !rolling)
     {
         velocityY = jumpForce;
