@@ -26,14 +26,6 @@ void playMusic()
 
 std::ifstream f("./assets/sounds/upfisurfers.mp3");
 
-if (!f.good())
-{
-    std::cout << "Arquivo nao encontrado!" << std::endl;
-}
-else
-{
-    std::cout << "Arquivo encontrado!" << std::endl;
-}
 
     if (ma_sound_init_from_file(
             &engine,

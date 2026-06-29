@@ -52,10 +52,6 @@ void AnimatedModel::loadModel(const std::string& path)
         setupMesh(mesh);
         meshes.push_back(mesh);
     }
-
-    cout << "AnimatedModel carregado: " << path << endl;
-    cout << "Meshes: " << meshes.size() << endl;
-    cout << "Bones: " << boneCounter << endl;
 }
 
 AnimatedMesh AnimatedModel::processMesh(aiMesh* mesh)
@@ -72,9 +68,6 @@ AnimatedMesh AnimatedModel::processMesh(aiMesh* mesh)
 
         result.textureID = chooseTextureByMaterialName(result.materialName);
         result.hasTexture = result.textureID != 0;
-
-        cout << "Material: " << result.materialName
-             << " | textura: " << (result.hasTexture ? "SIM" : "NAO") << endl;
     }
 
     result.vertices.resize(mesh->mNumVertices);
@@ -163,6 +156,20 @@ void AnimatedModel::extractBoneWeights(aiMesh* mesh, std::vector<AnimatedVertex>
             if (vertexID >= 0 && vertexID < (int)vertices.size())
                 setVertexBoneData(vertices[vertexID], boneID, weight);
         }
+
+        for (auto& vertex : vertices)
+{
+    float totalWeight = 0.0f;
+
+    for (int i = 0; i < 4; i++)
+        totalWeight += vertex.weights[i];
+
+    if (totalWeight > 0.0f)
+    {
+        for (int i = 0; i < 4; i++)
+            vertex.weights[i] /= totalWeight;
+    }
+}
     }
 }
 
@@ -176,6 +183,20 @@ void AnimatedModel::setVertexBoneData(AnimatedVertex& vertex, int boneID, float 
             vertex.weights[i] = weight;
             return;
         }
+    }
+
+    int smallestIndex = 0;
+
+    for (int i = 1; i < 4; i++)
+    {
+        if (vertex.weights[i] < vertex.weights[smallestIndex])
+            smallestIndex = i;
+    }
+
+    if (weight > vertex.weights[smallestIndex])
+    {
+        vertex.boneIDs[smallestIndex] = boneID;
+        vertex.weights[smallestIndex] = weight;
     }
 }
 
@@ -324,7 +345,7 @@ GLuint AnimatedModel::chooseTextureByMaterialName(const std::string& materialNam
     string base = "./assets/player/student/textures/";
 
     if (materialName.find("Hair") != string::npos)
-        return loadTextureFromFile(base + "Hair.jpg");
+        return loadTextureFromFile(base + "hair.jpg");
 
     if (materialName.find("Skin") != string::npos)
         return loadTextureFromFile(base + "Wolf3D_Skin_baseColor.jpeg");
@@ -333,7 +354,7 @@ GLuint AnimatedModel::chooseTextureByMaterialName(const std::string& materialNam
         return loadTextureFromFile(base + "Wolf3D_Skin_baseColor.jpeg");
 
     if (materialName.find("Top") != string::npos)
-        return loadTextureFromFile(base + "Wolf3D_Outfit_Bottom_baseColor.jpeg");
+        return loadTextureFromFile(base + "moletom.jpg");
 
     if (materialName.find("Bottom") != string::npos)
         return loadTextureFromFile(base + "Wolf3D_Outfit_Bottom_baseColor.jpeg");
@@ -413,6 +434,7 @@ void AnimatedModel::draw(const std::vector<glm::mat4>& boneMatrices)
 
     for (auto& mesh : meshes)
 {
+        
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mesh.hasTexture ? mesh.textureID : 0);
 

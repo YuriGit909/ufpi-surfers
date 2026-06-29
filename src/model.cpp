@@ -516,8 +516,6 @@ Model::Model(const std::string &path)
         meshes.push_back(data);
     }
 
-    cout << "Modelo carregado: " << path << endl;
-    cout << "Bones encontrados: " << boneCounter << endl;
 }
 
 void Model::draw()

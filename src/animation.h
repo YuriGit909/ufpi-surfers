@@ -54,11 +54,6 @@ public:
 
         aiAnimation* animation = scene->mAnimations[animationIndex];
 
-        std::cout << "Animacao usada: " 
-                << animationIndex 
-                << " - " 
-                << animation->mName.C_Str() 
-                << std::endl;
 
         m_Duration = animation->mDuration;
         m_TicksPerSecond = animation->mTicksPerSecond;
@@ -69,11 +64,6 @@ public:
         m_BoneCounter = model->getBoneCount();
 
         readMissingBones(animation);
-
-        std::cout << "Animacao carregada." << std::endl;
-        std::cout << "Duracao: " << m_Duration << std::endl;
-        std::cout << "Ticks por segundo: " << m_TicksPerSecond << std::endl;
-        std::cout << "Canais: " << animation->mNumChannels << std::endl;
     }
 
     Bone* findBone(const std::string& name)

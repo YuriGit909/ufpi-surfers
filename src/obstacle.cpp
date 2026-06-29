@@ -245,7 +245,7 @@ void initObstacles()
 {
     obstacleCount = 5;
     nextObstacleIncrease = 5000;
-    nextRecycleZ = -180.0f;
+    nextRecycleZ = -120.0f;
     obstacles.clear();
 }
 
@@ -253,6 +253,7 @@ void drawObstacles()
 {
     for (auto &obs : obstacles)
     {
+
         if (obs.type == BUS)
         {
             glPushMatrix();
@@ -311,7 +312,7 @@ void updateObstacles(float speed, float score)
     if (obstacles.empty())
     {
         for (int i = 0; i < obstacleCount; i++)
-            createObstacle(-200.0f - i * spacing);
+            createObstacle(-120.0f - i * spacing);
     }
 
     if (score >= nextObstacleIncrease)

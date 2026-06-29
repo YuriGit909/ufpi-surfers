@@ -15,9 +15,9 @@ void initPlayerModel()
 {
     character = new AnimatedModel("./assets/player/estudante.glb");
 
-    runAnimation = new Animation("./assets/player/estudante.glb", character, 6);
-    jumpAnimation = new Animation("./assets/player/estudante.glb", character, 0);
-    rollAnimation = new Animation("./assets/player/estudante.glb", character, 1);
+    runAnimation = new Animation("./assets/player/estudante.glb", character, 0);
+    jumpAnimation = new Animation("./assets/player/estudante.glb", character, 1);
+    rollAnimation = new Animation("./assets/player/estudante.glb", character, 2);
 
     animator = new Animator(runAnimation);
     animator->playAnimation(runAnimation, true);

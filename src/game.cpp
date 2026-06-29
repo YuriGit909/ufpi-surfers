@@ -24,6 +24,8 @@ const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 Model* streetModel = nullptr;
 Model* streetLowModel = nullptr;
 
+int lastTime = 0;
+
 float score = 0;
 float pointMultiplier = 0.25;
 
@@ -81,6 +83,8 @@ void setupGameCamera()
 void initGame()
 {
 
+    lastTime = glutGet(GLUT_ELAPSED_TIME);
+    
     sideHitWarning = false;
     sideHitTimer = 0;
 
@@ -242,6 +246,13 @@ void drawGame()
 void updateGame(int value)
 {
 
+    int currentTime = glutGet(GLUT_ELAPSED_TIME);
+    float deltaTime = (currentTime - lastTime) / 1000.0f;
+    lastTime = currentTime;
+
+    if (deltaTime > 0.05f)
+        deltaTime = 0.05f;
+
     if (gameOver)
     {
         glutPostRedisplay();
@@ -256,11 +267,14 @@ void updateGame(int value)
         return;
     }
 
-    trackOffset += speed;
+    float frameSpeed = speed * deltaTime * 60.0f;
 
-    updateCoins(speed, score);
+    trackOffset += frameSpeed;
+    updateCoins(frameSpeed, score);
+    updatePowerUps(frameSpeed);
+    updateObstacles(frameSpeed, score);
+
     checkCoinCollision();
-    updatePowerUps(speed);
 
     if (score >= limiar)
     {
@@ -283,7 +297,6 @@ void updateGame(int value)
     else
         score += pointMultiplier;
 
-    updateObstacles(speed, score);
 
     updatePlayer();
     if (sideHitWarning)
