@@ -10,7 +10,6 @@ void initObstacleModels();
 bool hasObstacleNear(float x, float z, float radiusX, float radiusZ);
 void clearNearbyObstacles(float z);
 
-// IA 2 – chamados de player.cpp ao pular/rolar
 void profileRegisterJump();
 void profileRegisterRoll();
 

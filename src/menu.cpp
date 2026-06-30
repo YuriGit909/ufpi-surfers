@@ -9,6 +9,8 @@ GLuint titleTexture = 0;
 GLuint cloudTexture = 0;
 GLuint startButtonTexture = 0;
 GLuint exitButtonTexture = 0;
+GLuint pauseButtonTexture = 0;
+GLuint restartButtonTexture = 0;
 
 Model portal("./assets/models/ufpi.obj");
 
@@ -58,6 +60,9 @@ void initMenu()
 
     startButtonTexture = loadMenuTexture("./assets/textures/start_button.png");
     exitButtonTexture  = loadMenuTexture("./assets/textures/exit_button.png");
+
+    pauseButtonTexture = loadMenuTexture("./assets/textures/pause.png");
+    restartButtonTexture = loadMenuTexture("./assets/textures/reiniciar.png");
 }
 
 void drawImage(GLuint texture, float cx, float cy, float w, float h)

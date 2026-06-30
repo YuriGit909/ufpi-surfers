@@ -13,4 +13,10 @@ void drawCloud(float x, float y, float w, float h);
 
 GLuint loadMenuTexture(const char *file);
 
+void drawImage(GLuint texture, float cx, float cy, float w, float h);
+
+extern GLuint titleTexture;
+extern GLuint pauseButtonTexture;
+extern GLuint restartButtonTexture;
+
 #endif

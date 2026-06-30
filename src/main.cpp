@@ -5,6 +5,7 @@
 #include "audio.h"
 #include <cstdlib>
 
+#include "professor.h"
 #include "menu.h"
 #include "game.h"
 #include "powerup.h"
@@ -13,11 +14,7 @@
 #include <ctime>
 #include <cstdlib>
 
-enum Screen {
-    MENU,
-    INTRO,
-    PLAYING
-};
+
 
 Screen currentScreen = MENU;
 float fadeAlpha = 0.0f;
@@ -141,7 +138,8 @@ int main(int argc, char** argv) {
     playMusic();
 
     atexit(stopAudio);
-      initPlayerModel();
+    initPlayerModel();
+    initProfessor();
     initObstacleModels();
     initPowerUpModels();
     initGameModels();

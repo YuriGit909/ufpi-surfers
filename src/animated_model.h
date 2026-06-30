@@ -46,7 +46,10 @@ struct AnimatedMesh
 class AnimatedModel
 {
 public:
-    AnimatedModel(const std::string& path);
+    AnimatedModel(
+    const std::string& path,
+    const std::string& textures = "./assets/player/student/textures/"
+);
 
     void draw();
     void draw(const std::vector<glm::mat4>& boneMatrices);
@@ -71,7 +74,7 @@ private:
 private:
     Assimp::Importer importer;
     const aiScene* sceneRef = nullptr;
-
+    std::string textureFolder;
     std::vector<AnimatedMesh> meshes;
 
     std::map<std::string, AnimatedBoneInfo> boneInfoMap;

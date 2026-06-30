@@ -12,8 +12,16 @@
 #include <cstdio>
 #include "model.h"
 #include "menu.h"
+#include "professor.h"
 
 using namespace std;
+
+bool waitingGameOver = false;
+float gameOverTimer = 0.0f;
+bool showProfessor = false;
+int gameOverPhase = 0;
+
+extern Screen currentScreen;
 
 float cameraX = 0.0f;
 
@@ -21,8 +29,8 @@ bool sideHitWarning = false;
 int sideHitTimer = 0;
 const int SIDE_HIT_LIMIT = 300; // 5 segundos aprox.
 
-Model* streetModel = nullptr;
-Model* streetLowModel = nullptr;
+Model *streetModel = nullptr;
+Model *streetLowModel = nullptr;
 
 int lastTime = 0;
 
@@ -46,6 +54,48 @@ void initGameModels()
 {
     streetModel = new Model("./assets/models/street_trees.glb");
     streetLowModel = new Model("./assets/models/street_trees_low.glb");
+}
+
+void startGameOverSequence()
+{
+    waitingGameOver = true;
+    gameOverTimer = 1.0f;
+    gameOverPhase = 1;
+
+    showProfessorCapture();
+}
+
+void drawOverlayScreen(GLuint buttonTexture)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, 1000, 0, 600);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDisable(GL_TEXTURE_2D);
+    glColor4f(0.0f, 0.0f, 0.0f, 0.65f);
+
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(1000, 0);
+    glVertex2f(1000, 600);
+    glVertex2f(0, 600);
+    glEnd();
+
+    drawImage(titleTexture, 500, 430, 700, 280);
+    drawImage(buttonTexture, 500, 230, 350, 70);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
 }
 
 void drawCube(float x, float y, float z, float sx, float sy, float sz)
@@ -84,7 +134,15 @@ void initGame()
 {
 
     lastTime = glutGet(GLUT_ELAPSED_TIME);
-    
+
+    resetPlayerAnimation();
+    resetProfessorAnimation();
+
+    waitingGameOver = false;
+    gameOverTimer = 0.0f;
+    gameOverPhase = 0;
+    resetProfessorIntro();
+
     sideHitWarning = false;
     sideHitTimer = 0;
 
@@ -153,8 +211,7 @@ void drawStreet()
         glPushMatrix();
         glTranslatef(0.0f, 0.0f, z);
 
-        
-        if (i <=1)
+        if (i <= 1)
         {
             if (streetModel != nullptr)
                 streetModel->draw();
@@ -186,7 +243,7 @@ void drawGame()
 
     float offset = cameraX * 8.0f;
 
-    drawCloud(20  - offset, 400, 180, 140);
+    drawCloud(20 - offset, 400, 180, 140);
     drawCloud(760 - offset, 450, 220, 140);
     drawCloud(330 - offset, 450, 140, 140);
     drawCloud(560 - offset, 470, 120, 140);
@@ -201,9 +258,10 @@ void drawGame()
     drawPowerUps();
     drawCoins();
     drawPlayer();
+    drawProfessor();
     drawShieldFlash();
     drawPowerUpHUD(1000, 800);
-    
+
     if (isDoublePointsActive())
     {
         glColor3f(1.0f, 0.8f, 0.0f);
@@ -230,22 +288,18 @@ void drawGame()
 
     if (gameOver)
     {
-        glColor3f(1.0f, 0.0f, 0.0f);
-        drawText2D(430, 330, "GAME OVER");
-        drawText2D(350, 290, "PRESSIONE ENTER PARA REINICIAR");
+        drawOverlayScreen(restartButtonTexture);
     }
 
     if (paused)
     {
-        glColor3f(1.0f, 1.0f, 0.0f);
-        drawText2D(470, 320, "PAUSADO");
-        drawText2D(390, 280, "PRESSIONE P PARA CONTINUAR");
+        drawOverlayScreen(pauseButtonTexture);
     }
 }
 
 void updateGame(int value)
 {
-
+    
     int currentTime = glutGet(GLUT_ELAPSED_TIME);
     float deltaTime = (currentTime - lastTime) / 1000.0f;
     lastTime = currentTime;
@@ -267,18 +321,51 @@ void updateGame(int value)
         return;
     }
 
+if (waitingGameOver)
+{
+    gameOverTimer -= deltaTime;
+
+    updateProfessor(deltaTime);
+    updatePlayer();
+
+    if (gameOverTimer <= 0.0f)
+    {
+        if (gameOverPhase == 1)
+        {
+            gameOverPhase = 2;
+            gameOverTimer = 3.0f;
+
+            playPulledAnimation();
+            playProfessorPullAnimation();
+        }
+        else
+        {
+            waitingGameOver = false;
+            gameOverPhase = 0;
+            gameOver = true;
+        }
+    }
+
+    glutPostRedisplay();
+    glutTimerFunc(16, updateGame, 0);
+    return;
+}
+
     float frameSpeed = speed * deltaTime * 60.0f;
 
     trackOffset += frameSpeed;
+
+    updateProfessor(deltaTime);
     updateCoins(frameSpeed, score);
     updatePowerUps(frameSpeed);
     updateObstacles(frameSpeed, score);
 
     checkCoinCollision();
+    checkCollision();
+    checkPowerUps();
 
     if (score >= limiar)
     {
-
         pointMultiplier *= 1.15f;
         speed *= 1.15f;
         limiar *= 2;
@@ -297,8 +384,8 @@ void updateGame(int value)
     else
         score += pointMultiplier;
 
-
     updatePlayer();
+
     if (sideHitWarning)
     {
         sideHitTimer++;
@@ -307,13 +394,10 @@ void updateGame(int value)
         {
             sideHitWarning = false;
             sideHitTimer = 0;
-
-            // se tiver implementado cor no player
-            // setDamaged(false);
+            hideProfessor();
         }
     }
-    checkCollision();
-    checkPowerUps();
+
     glutPostRedisplay();
     glutTimerFunc(16, updateGame, 0);
 }
@@ -323,10 +407,10 @@ void gameKeyboard(unsigned char key, int x, int y)
 
     if (gameOver)
     {
-
         if (key == 13)
-        { // ENTER
+        {
             initGame();
+            currentScreen = MENU;
         }
 
         return;

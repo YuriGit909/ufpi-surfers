@@ -26,8 +26,11 @@ static void tryLoadAnimatedShader()
     }
 }
 
-AnimatedModel::AnimatedModel(const std::string& path)
+AnimatedModel::AnimatedModel(
+    const std::string& path,
+    const std::string& textures)
 {
+    textureFolder = textures;
     loadModel(path);
 }
 
@@ -342,7 +345,7 @@ GLuint AnimatedModel::loadTextureFromFile(const std::string& path)
 
 GLuint AnimatedModel::chooseTextureByMaterialName(const std::string& materialName)
 {
-    string base = "./assets/player/student/textures/";
+    string base = textureFolder + "/";
 
     if (materialName.find("Hair") != string::npos)
         return loadTextureFromFile(base + "hair.jpg");

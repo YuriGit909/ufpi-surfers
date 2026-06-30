@@ -14,5 +14,9 @@ bool isRolling();
 void initPlayerModel();
 void playHitSideAnimation();
 void playHitFrontAnimation();
+void playPulledAnimation();
+
+void resetPlayerAnimation();
+void playSideBumpAnimation(int direction);
 
 #endif

@@ -11,15 +11,29 @@ static Animation *runAnimation = nullptr;
 static Animation *jumpAnimation = nullptr;
 static Animation *rollAnimation = nullptr;
 static Animator *animator = nullptr;
+static Animation *hitAnimation = nullptr;
+static Animation *pulledAnimation = nullptr;
+static bool hitFront = false;
+bool sideBump = false;
+int sideBumpTimer = 0;
+int sideBumpDirection = 0;
+
+const int SIDE_BUMP_DURATION = 12;
+const float SIDE_BUMP_AMOUNT = 0.8f;
 
 void initPlayerModel()
 {
-    character = new AnimatedModel("./assets/player/estudante.glb");
+    character = new AnimatedModel(
+    "./assets/player/estudante.glb",
+    "./assets/player/student/textures"
+);
 
-    runAnimation = new Animation("./assets/player/estudante.glb", character, 0);
-    jumpAnimation = new Animation("./assets/player/estudante.glb", character, 1);
-    rollAnimation = new Animation("./assets/player/estudante.glb", character, 2);
-
+    hitAnimation = new Animation("./assets/player/estudante1.glb", character, 0);
+    pulledAnimation = new Animation("./assets/player/estudante1.glb", character, 2);
+    runAnimation = new Animation("./assets/player/estudante.glb", character, 1);
+    jumpAnimation = new Animation("./assets/player/estudante.glb", character, 2);
+    rollAnimation = new Animation("./assets/player/estudante.glb", character, 3);
+    // bater é a 0
     animator = new Animator(runAnimation);
     animator->playAnimation(runAnimation, true);
 }
@@ -38,12 +52,64 @@ int rollTimer = 0;
 
 const int ROLL_DURATION = 35; // ~0,5s
 
+void playPulledAnimation()
+{
+    if (animator && pulledAnimation)
+    {
+        animator->setSpeed(1.0f);
+        animator->playAnimation(pulledAnimation, false);
+    }
+}
+
+void playSideBumpAnimation(int direction)
+{
+    sideBump = true;
+    sideBumpTimer = SIDE_BUMP_DURATION;
+    sideBumpDirection = direction;
+}
+
+void resetPlayerAnimation()
+{
+    hitFront = false;
+    jumping = false;
+    rolling = false;
+
+    playerY = 1.0f;
+    velocityY = 0.0f;
+    rollTimer = 0;
+
+    if (animator && runAnimation)
+    {
+        animator->setSpeed(1.0f);
+        animator->playAnimation(runAnimation, true);
+    }
+}
+
+void playHitFrontAnimation()
+{
+    hitFront = true;
+
+    if (animator && hitAnimation)
+    {
+        animator->setSpeed(1.0f);
+        animator->playAnimation(hitAnimation, false);
+    }
+}
+
 void drawPlayer()
 {
     glPushMatrix();
 
+    float bumpOffset = 0.0f;
+
+    if (sideBump)
+    {
+        float t = 1.0f - (float)sideBumpTimer / SIDE_BUMP_DURATION;
+        bumpOffset = sin(t * 3.14159f) * SIDE_BUMP_AMOUNT * sideBumpDirection;
+    }
+
     glTranslatef(
-        lanes[currentLane],
+        lanes[currentLane] + bumpOffset,
         (isRolling() ? 0.3f : playerY) + 0.6f,
         2.0f);
 
@@ -72,7 +138,8 @@ void drawPlayer()
 
 void roll()
 {
-
+    if (hitFront)
+        return;
     profileRegisterRoll();
     if (!rolling && !jumping)
     {
@@ -94,6 +161,8 @@ bool isRolling()
 
 void jump()
 {
+    if (hitFront)
+        return;
     profileRegisterJump();
     if (!jumping && !rolling)
     {
@@ -110,6 +179,24 @@ void jump()
 
 void updatePlayer()
 {
+    if (sideBump)
+    {
+        sideBumpTimer--;
+
+        if (sideBumpTimer <= 0)
+        {
+            sideBump = false;
+            sideBumpTimer = 0;
+        }
+    }
+
+    if (hitFront)
+    {
+        if (animator)
+            animator->updateAnimation(0.016f);
+
+        return;
+    }
     if (jumping)
     {
         velocityY += gravity;
