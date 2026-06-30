@@ -30,7 +30,7 @@ void initProfessor()
     "./assets/player/professor/textures"
     );
 
-    professorRun = new Animation("./assets/player/professor.glb", professor, 1);
+    professorRun = new Animation("./assets/player/professor.glb", professor, 2);
     professorPullAnimation = new Animation("./assets/player/professor.glb", professor, 0);
 
     professorAnimator = new Animator(professorRun);
