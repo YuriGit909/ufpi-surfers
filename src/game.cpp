@@ -120,12 +120,12 @@ void setupGameCamera()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    float targetCameraX = getPlayerX() * 0.4f;
+    float targetCameraX = getPlayerX() * 0.7f;
 
     cameraX += (targetCameraX - cameraX) * 0.08f;
 
     gluLookAt(
-        cameraX, 5.0f, 10.0f,
+        cameraX, 6.0f, 10.0f,
         cameraX, 1.5f, -10.0f,
         0.0f, 1.0f, 0.0f);
 }

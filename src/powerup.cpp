@@ -12,7 +12,7 @@
 
 bool finalExamActive = false;
 int finalExamTimer = 0;
-const int FINAL_EXAM_DURATION = 60 * 15; // 1 minuto em 60 FPS
+const int FINAL_EXAM_DURATION = 60 * 15; 
 static int   shieldFlashTimer    = 0;
 static const int SHIELD_FLASH_DURATION = 60;   // ~1 s a 60 FPS
 static int   shieldFlashPhase    = 0;           

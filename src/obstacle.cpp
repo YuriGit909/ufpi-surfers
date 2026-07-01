@@ -148,11 +148,11 @@ static HitBox getBusHitBox(BusType t)
     switch (t)
     {
     case BUS_401:
-        return {1.2f, 10.0f, 4.0f};
+        return {1.2f, 15.0f, 4.0f};
     case BUS_365:
-        return {1.0f, 7.0f, 3.5f};
+        return {1.0f, 13.0f, 3.5f};
     case BUS_FANTASMAO:
-        return {1.0f, 8.0f, 3.5f};
+        return {1.0f, 12.0f, 3.5f};
     }
     return {1.0f, 7.0f, 3.5f};
 }
@@ -468,15 +468,16 @@ void drawObstacles()
             switch (obs.busType)
             {
             case BUS_401:
-                glScalef(0.07f, 0.07f, 0.07f);
+                glScalef(0.1f, 0.12f, 0.1f);
                 glRotatef(-90.0f, 0.0f, 1.0f, 0.0f);
                 bus401.draw();
                 break;
             case BUS_365:
+                glScalef(1.5f, 1.52f, 1.5f);
                 bus365.draw();
                 break;
             case BUS_FANTASMAO:
-                glScalef(0.7f, 0.7f, 0.7f);
+                glScalef(1.0f, 1.0f, 1.0f);
                 fantasmao.draw();
                 break;
             }
@@ -697,29 +698,41 @@ bool canMoveToLane(float targetX)
         if (obs.type == BUS)
         {
             HitBox hb = getBusHitBox(obs.busType);
-            if (distX < hb.hitX && distZ < hb.hitZ && ptY < hb.hitH)
-            {
                 if (distX < hb.hitX && distZ < hb.hitZ && ptY < hb.hitH)
                 {
                     if (sideHitWarning)
-                    {
-                        playHitFrontAnimation();
-                        startGameOverSequence();
-                    }
-                    else
-                    {
-                        sideHitWarning = true;
-                        sideHitTimer = 0;
-                        int dir = targetX > getPlayerX() ? 1 : -1;
-                        playSideBumpAnimation(dir);
+{
+    if (isFinalExamActive())
+    {
+        consumeFinalExam();
+        triggerShieldFlash();
+        clearNearbyObstacles(obs.z);
 
-                        showProfessorNear(); // faz o professor voltar a perseguir
-                    }
+        sideHitWarning = false;
+        sideHitTimer = 0;
+        hideProfessor();
+
+        return false;
+    }
+
+    playHitFrontAnimation();
+    startGameOverSequence();
+}
+else
+{
+    sideHitWarning = true;
+    sideHitTimer = 0;
+
+    int dir = targetX > getPlayerX() ? 1 : -1;
+    playSideBumpAnimation(dir);
+
+    showProfessorNear();
+}
+
 
                     return false;
                 }
             }
-        }
     }
     return true;
 }

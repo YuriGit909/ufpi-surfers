@@ -191,7 +191,7 @@ void checkCoinCollision()
 
 void spawnCoinArc(float x, float z)
 {
-    const int quantidade = 6;
+    const int quantidade = 7;
 
     for (int i = 0; i < quantidade; i++)
     {
@@ -201,8 +201,11 @@ void spawnCoinArc(float x, float z)
 
         float t = (float)i / (quantidade - 1);
 
-        c.z = z - 4.0f + i * 1.6f;
-        c.y = 1.2f + sin(t * 3.14159f) * 2.0f;
+        c.z = z - 12.0f + i * 3.5f;
+
+        // mais alto
+        c.y = 1.2f + sin(t * 3.14159f) * 2.8f;
+
         c.active = true;
 
         coins.push_back(c);

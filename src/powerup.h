@@ -1,5 +1,6 @@
 #ifndef POWERUP_H
 #define POWERUP_H
+extern GLuint mangaHudTexture;
 
 void initPowerUps();
 void drawPowerUps();
@@ -13,6 +14,5 @@ void activateFinalExam();
 void consumeFinalExam();
 void triggerShieldFlash();
 void drawShieldFlash();   
-extern GLuint mangaHudTexture;
 void drawPowerUpHUD(int screenW, int screenH);     
 #endif
